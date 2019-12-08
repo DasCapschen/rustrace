@@ -3,7 +3,7 @@ use sdl2::pixels::Color;
 use sdl2::render::WindowCanvas;
 
 use crate::camera::Camera;
-use crate::hittable::{HitResult, Hittable};
+use crate::hittable::{Hittable};
 use crate::light::Light;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -50,7 +50,7 @@ impl Renderer {
             for y in 0..height as i32 {
                 let mut final_color = Vec3::new(0.0, 0.0, 0.0);
 
-                for s in 0..4 {
+                for _s in 0..4 {
                     //multisample (4 samples)!
                     let ray = self.camera.get_ray(
                         x as f64 + rng.gen_range(0.0, 1.0),

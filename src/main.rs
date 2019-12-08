@@ -1,16 +1,16 @@
 use sdl2::event::Event;
-use sdl2::gfx::primitives::DrawRenderer;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
-use sdl2::rect::Point;
-use sdl2::render::Canvas;
-use sdl2::video::{Window, WindowSurfaceRef};
 
-use crate::camera::Camera;
-use crate::hittable::Hittable;
+use sdl2::keyboard::Keycode;
+
+
+
+
+
+
+
 use crate::light::Light;
 use crate::material::{Lambertian, Metal};
-use crate::ray::Ray;
+
 use crate::renderer::Renderer;
 use crate::sphere::Sphere;
 use crate::vec3::Vec3;
@@ -34,7 +34,7 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut canvas = window.into_canvas().build().unwrap();
+    let canvas = window.into_canvas().build().unwrap();
     let mut renderer = Renderer::new(canvas); //FIXME: AA does NOT work!
 
     let ground_sphere_mat = Box::new(Lambertian::new(Vec3::new(20.0, 225.0, 50.0)));

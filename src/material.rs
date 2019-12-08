@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt::{Debug};
 
 use rand::Rng;
 
@@ -15,7 +15,7 @@ pub trait Material: Debug + MaterialClone {
     fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Ray)>;
 }
 
-trait MaterialClone {
+pub trait MaterialClone {
     fn clone_box(&self) -> Box<dyn Material>;
 }
 //blanket implementation
@@ -34,7 +34,7 @@ impl Clone for Box<dyn Material> {
         self.clone_box()
     }
 
-    fn clone_from(&mut self, source: &Self) {
+    fn clone_from(&mut self, _source: &Self) {
         unimplemented!()
     }
 }
@@ -51,7 +51,7 @@ impl Lambertian {
     }
 }
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Ray)> {
+    fn scatter(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Ray)> {
         let mut rng = rand::thread_rng();
         let random_dir = Vec3::new(
             rng.gen_range(0.0, 1.0),
