@@ -1,12 +1,16 @@
-use crate::vec3::Vec3;
-use crate::hittable::{Hittable, HitResult};
-use crate::ray::Ray;
+use std::clone::Clone;
+use std::fmt::Debug;
 
-#[derive(Debug,Copy,Clone)]
+use crate::hittable::{HitResult, Hittable};
+use crate::material::Material;
+use crate::ray::Ray;
+use crate::vec3::Vec3;
+
+#[derive(Debug, Clone)]
 pub struct Sphere {
-    pub center : Vec3,
-    pub radius : f64,
-    pub color : Vec3
+    pub center: Vec3,
+    pub radius: f64,
+    pub material: Box<dyn Material>,
 }
 
 impl Hittable for Sphere {
@@ -20,20 +24,19 @@ impl Hittable for Sphere {
 
         let a = ray.direction.dot(ray.direction);
         let b = oc.dot(ray.direction);
-        let c = oc.dot(oc) - (self.radius*self.radius);
+        let c = oc.dot(oc) - (self.radius * self.radius);
 
         let root = b * b - a * c;
 
         //cannot take sqrt of negative, no hit
         if root < 0.0 {
             return None;
-        }
-        else {
+        } else {
             let mut t = (-b + root.sqrt()) / (a);
 
             //if root is 0, only 1 hit (tangent on sphere), no need to check both
             if root != 0.0 {
-                t = t.min( (-b - root.sqrt()) / (a) );
+                t = t.min((-b - root.sqrt()) / (a));
             }
 
             //if t is out of range, no hit
@@ -44,11 +47,11 @@ impl Hittable for Sphere {
             let p = ray.point_at(t);
             let n = (p - self.center).normalised();
 
-            Some(HitResult{
+            Some(HitResult {
                 ray_param: t,
                 hit_position: p,
                 normal: n,
-                base_color: self.color
+                material: self.material.clone(),
             })
         }
     }
