@@ -10,6 +10,8 @@ use crate::sphere::Sphere;
 use crate::vec3::Vec3;
 
 use std::time::SystemTime;
+use sdl2::rect::Rect;
+use sdl2::pixels::Color;
 
 mod camera;
 mod hittable;
@@ -20,8 +22,8 @@ mod renderer;
 mod sphere;
 mod vec3;
 
-const WIDTH: u32 = 300;
-const HEIGHT: u32 = 200;
+const WIDTH: u32 = 1280;
+const HEIGHT: u32 = 720;
 
 fn main() {
     let sdl2_context = sdl2::init().unwrap();
@@ -33,12 +35,12 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 16);
+    let mut renderer = Renderer::new((WIDTH/2) as i32, (HEIGHT/2) as i32, 64);
 
-    let ground_sphere_mat = Material::new(Vec3::rgb(20, 225, 50), 0.0, 1.0);
-    let diffuse_sphere_mat = Material::new(Vec3::rgb(225, 80, 30), 0.0, 1.0);
-    let sphere1_mat = Material::new(Vec3::rgb(255, 255, 255), 1.0, 0.9);
-    let sphere2_mat = Material::new(Vec3::rgb(30, 220, 180), 0.5, 0.1);
+    let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0);
+    let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0);
+    let sphere1_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 1.0);
+    let sphere2_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 0.0);
 
     //diffuse sphere
     renderer.add_object(Box::new(Sphere {
@@ -85,17 +87,22 @@ fn main() {
             }
         }
 
-        let mut surface = window.surface(&event_pump).unwrap();
-
+        //render the image
         let start_time = SystemTime::now();
         let pixels = renderer.draw_image();
         let end_time = SystemTime::now();
+        println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
 
+        //get surface
+        let mut surface = window.surface(&event_pump).unwrap();
+
+        //write pixels
         if let Some(pixel_buffer) = surface.without_lock_mut() {
+
             pixel_buffer.copy_from_slice(pixels);
         }
 
+        //"swap"
         surface.update_window().expect("failed to update windows!");
-        println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
     }
 }
