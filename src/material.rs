@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 
-
-
 use crate::hittable::HitResult;
 use crate::ray::Ray;
 use crate::vec3::Vec3;

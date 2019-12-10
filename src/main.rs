@@ -9,10 +9,7 @@ use crate::renderer::Renderer;
 use crate::sphere::Sphere;
 use crate::vec3::Vec3;
 
-
-
-
-use std::time::{SystemTime};
+use std::time::SystemTime;
 
 mod camera;
 mod hittable;

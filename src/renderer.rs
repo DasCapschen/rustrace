@@ -1,14 +1,10 @@
 use rand::Rng;
 
-
-
 use crate::camera::Camera;
 use crate::hittable::Hittable;
 use crate::light::Light;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-
-
 
 pub struct Renderer {
     pixels: Vec<u8>,
