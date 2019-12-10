@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use rand::Rng;
+
 
 use crate::hittable::HitResult;
 use crate::ray::Ray;
@@ -42,10 +42,7 @@ impl Material {
         }
 
         //else, scatter it
-        let scattered = Ray {
-            origin: hit.hit_position,
-            direction,
-        };
+        let scattered = Ray::new(hit.hit_position, direction);
 
         Some((self.albedo, scattered))
     }

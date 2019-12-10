@@ -68,9 +68,6 @@ impl Camera {
             + (x - (self.width / 2) as f64) * span_x
             + (y - (self.height / 2) as f64) * span_y;
 
-        Ray {
-            origin: self.position,
-            direction: pixel_dir,
-        }
+        Ray::new(self.position, pixel_dir)
     }
 }

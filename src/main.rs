@@ -8,11 +8,11 @@ use crate::material::Material;
 use crate::renderer::Renderer;
 use crate::sphere::Sphere;
 use crate::vec3::Vec3;
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
-use sdl2::render::{Texture, TextureAccess, TextureCreator};
-use sdl2::surface::Surface;
-use std::time::{SystemTime, UNIX_EPOCH};
+
+
+
+
+use std::time::{SystemTime};
 
 mod camera;
 mod hittable;
@@ -98,7 +98,7 @@ fn main() {
             pixel_buffer.copy_from_slice(pixels);
         }
 
-        surface.update_window();
+        surface.update_window().expect("failed to update windows!");
         println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
     }
 }

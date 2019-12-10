@@ -1,14 +1,14 @@
 use rand::Rng;
-use sdl2::pixels::Color;
-use sdl2::render::WindowCanvas;
+
+
 
 use crate::camera::Camera;
 use crate::hittable::Hittable;
 use crate::light::Light;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use std::iter::Sum;
-use std::sync::{Arc, RwLock};
+
+
 
 pub struct Renderer {
     pixels: Vec<u8>,
