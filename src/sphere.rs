@@ -6,11 +6,11 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
-    pub material: Box<dyn Material>,
+    pub material: Material,
 }
 
 impl Hittable for Sphere {

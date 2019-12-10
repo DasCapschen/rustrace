@@ -4,15 +4,15 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct HitResult {
     pub ray_param: f64,
     pub hit_position: Vec3,
     pub normal: Vec3,
-    pub material: Box<dyn Material>,
+    pub material: Material,
 }
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
 }
 

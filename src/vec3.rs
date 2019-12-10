@@ -1,3 +1,5 @@
+use rand::Rng;
+use std::iter::Sum;
 use std::ops::{Add, Div, Mul, Sub};
 
 //auto-implement printing
@@ -12,6 +14,14 @@ impl Vec3 {
     /// ctor
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { x, y, z }
+    }
+
+    pub fn rgb(r: u8, g: u8, b: u8) -> Self {
+        Vec3 {
+            x: r as f64 / 255.0,
+            y: g as f64 / 255.0,
+            z: b as f64 / 255.0,
+        }
     }
 
     /// get the length of the vector
@@ -53,6 +63,26 @@ impl Vec3 {
         //          ↘ | /
         //   ---------+---------
         *self - 2.0 * self.dot(normal) * normal
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        let mut rng = rand::thread_rng();
+        let mut random_dir;
+        loop {
+            random_dir = Vec3::new(
+                rng.gen_range(0.0, 1.0),
+                rng.gen_range(0.0, 1.0),
+                rng.gen_range(0.0, 1.0),
+            );
+            if random_dir.len() <= 1.0 {
+                break;
+            }
+        }
+        random_dir
+    }
+
+    pub fn lerp(lhs: Vec3, rhs: Vec3, alpha: f64) -> Vec3 {
+        (1.0 - alpha) * lhs + alpha * rhs
     }
 }
 
@@ -144,5 +174,15 @@ impl Sub<Vec3> for Vec3 {
             y: self.y - rhs.y,
             z: self.z - rhs.z,
         }
+    }
+}
+
+impl<'a> Sum<&'a Vec3> for Vec3 {
+    fn sum<I: Iterator<Item = &'a Vec3>>(iter: I) -> Vec3 {
+        let mut result = Vec3::new(0.0, 0.0, 0.0);
+        for v in iter {
+            result = result + *v;
+        }
+        result
     }
 }

@@ -6,8 +6,8 @@ pub struct Camera {
     direction: Vec3,
     focal_dist: f64,
     fov: f64,
-    width: u32,
-    height: u32,
+    width: i32,
+    height: i32,
 }
 
 // FOV = 90°
@@ -25,7 +25,7 @@ pub struct Camera {
 // f =  width / 2 * tan45
 
 impl Camera {
-    pub fn new(pos: Vec3, dir: Vec3, fov: f64, width: u32, height: u32) -> Self {
+    pub fn new(pos: Vec3, dir: Vec3, fov: f64, width: i32, height: i32) -> Self {
         Camera {
             position: pos,
             direction: dir.normalised(),
