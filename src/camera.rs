@@ -3,70 +3,72 @@ use crate::vec3::Vec3;
 
 pub struct Camera {
     pub position: Vec3,
-    direction: Vec3,
-    focal_dist: f64,
+    pub direction: Vec3,
     fov: f64,
     width: i32,
     height: i32,
 }
 
-// FOV = 90°
-//     width
-//  *----X----*
-//  \    |    /
-//   \   |45°/
-//    \ f|  /
-//     \ | /
-//      \|/
-//       O
-// => tan 45 = (width/2) / f
-// tan 45 * f = width/2
-// 2 * tan 45 * f = width
-// f =  width / 2 * tan45
-
 impl Camera {
-    pub fn new(pos: Vec3, dir: Vec3, fov: f64, width: i32, height: i32) -> Self {
+    pub fn new(position: Vec3, direction: Vec3, fov: f64, width: i32, height: i32) -> Self {
         Camera {
-            position: pos,
-            direction: dir.normalised(),
-            focal_dist: (2.0 * (fov / 2.0).to_radians().tan()) / width as f64, //inverted!
+            position,
+            direction: direction.normalised(),
             fov,
             width,
             height,
         }
     }
 
+
     pub fn get_ray(&self, x: f64, y: f64) -> Ray {
-        let center = self.position + self.direction;
+        const global_up: Vec3 = Vec3{x: 0.0, y: 1.0, z: 0.0};
 
-        let mut span_x = Vec3::new(1.0, 0.0, 0.0);
+        //yes, this is very verbose on purpose, I know it can be optimised
+        //but tbh, the compiler probably does that for us
 
-        if self.direction.z != 0.0 {
-            let a = self.direction.x / self.direction.z;
-            span_x.x = 1.0 / (1.0 + a * a).sqrt();
-            span_x.z = (span_x.x * self.direction.x) / self.direction.z;
-        } else if self.direction.x != 0.0 {
-            span_x.x = 0.0;
-            span_x.y = 0.0;
-            span_x.z = 1.0;
-        }
+        //   ^ *-----X-----*  real_width
+        //   |  \    |    /
+        //   |   \   |   / 
+        // 1 +    \--+--/ projected width
+        //   |     \ | /
+        //   |      \|/
+        // 0 +       O
+        // depth
+        //
+        // depth = 1
+        // angle = 90° (fov)
+        //
+        // => tan(fov/2) = (real_width/2) / depth
+        // tan 45 = width/2
+        // 2 * tan 45 = width
 
-        let mut span_y = span_x.cross(self.direction);
-        span_y = span_y.normalised();
-        if span_y.y > 0.0 {
-            span_y.y *= -1.0;
-        }
+        //width of our screen at focal distance
+        let focal_width = 2.0*(self.fov/2.0).to_radians().tan();
 
-        if self.direction.z < 0.0 {
-            span_x.x *= -1.0;
-        }
+        //figure out by how much we have to scale real_width and real_height to arrive at focal_width / focal_height
+        let scale = focal_width / self.width as f64;
 
-        span_x = span_x * self.focal_dist;
-        span_y = span_y * self.focal_dist;
+        //HINT: no need to scale by aspect ratio because x and y don't go between 0..1, but 0..width / 0..height!
+        //else it would be:
+        //aspect = height / width
+        //height_scale = aspect * width_scale
 
-        let pixel_dir = center
-            + (x - (self.width / 2) as f64) * span_x
-            + (y - (self.height / 2) as f64) * span_y;
+        //calculate local coordinate system
+        //let forward = (self.target - self.position).normalised();
+        let forward = self.direction.normalised();
+        let right = global_up.cross(forward).normalised() * scale;
+        let up = forward.cross(right).normalised() * -scale; //negative because (0,0) is TOP right
+
+        let center = self.position + forward;
+
+        //position of the pixel on our "screen" in world space
+        let pixel_pos = center
+            + (x - (self.width / 2) as f64) * right //this is where real_width is scaled down to focal_width
+            + (y - (self.height / 2) as f64) * up;
+
+        //direction of the ray from us to pixel pos
+        let pixel_dir = pixel_pos - self.position;
 
         Ray::new(self.position, pixel_dir)
     }
