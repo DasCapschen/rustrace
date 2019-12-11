@@ -11,13 +11,17 @@ pub struct Renderer {
     width: i32,
     height: i32,
     samples: u8,
-    camera: Camera,
+    pub camera: Camera,
     objects: Vec<Box<dyn Hittable>>,
     lights: Vec<Light>,
 }
 
 impl Renderer {
     pub fn new(width: i32, height: i32, samples: u8) -> Self {
+        let pos = Vec3::new(0.0, 0.0, -1.0);
+        let target = Vec3::new(0.0, 0.0, 1.0); //sphere center
+        let dir = target - pos;
+
         Renderer {
             pixels: vec![0; ((width*2) * (height*2) * 4) as usize], // * 4 because R, G, B, A!
             width,
@@ -26,7 +30,7 @@ impl Renderer {
             camera: Camera::new(
                 Vec3::new(0.0, 0.0, 0.0),
                 Vec3::new(0.0, 0.0, 1.0),
-                90.0,
+                90.0, //hfov
                 width,
                 height,
             ),
@@ -134,6 +138,24 @@ impl Renderer {
     }
 
     fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
+        let t = 0.5 * (ray.direction.normalised().y + 1.0);
+        let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
+
+        let mut ray_to_use = *ray;
+        let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
+        while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
+            if let Some((attenuation, scattered_ray)) = hit.material.scatter(&ray_to_use, &hit) {
+                ray_to_use = scattered_ray;
+                final_attenuation = final_attenuation * attenuation;
+            }
+            else {
+                return Vec3::new(0.0, 0.0, 0.0);
+            }
+        }
+
+        return color * final_attenuation;
+
+        /*
         if let Some(hit) = object.hit(ray, 0.0001, std::f64::MAX) {
             //if no lights, display normals
             if self.lights.is_empty() {
@@ -143,7 +165,6 @@ impl Renderer {
                 return Vec3::new(r, g, b);
             } else {
                 if let Some((attenuation, scattered_ray)) = hit.material.scatter(ray, &hit) {
-                    //FIXME: possible unlimited recursion!
                     return attenuation * self.trace_color(&scattered_ray, object);
                 }
                 return Vec3::rgb(0, 0, 0);
@@ -153,5 +174,6 @@ impl Renderer {
             let t = 0.5 * (ray.direction.normalised().y + 1.0);
             return (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
         }
+        */
     }
 }
