@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::iter::Sum;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Sub, SubAssign, Neg};
 
 //auto-implement printing
 #[derive(Debug, Copy, Clone)]
@@ -51,9 +51,9 @@ impl Vec3 {
     /// cross product between self and rhs
     pub fn cross(&self, rhs: Vec3) -> Vec3 {
         Vec3 {
-            x: self.y * rhs.z + self.z * rhs.y, //xyzzy
-            y: self.z * rhs.x + self.x * rhs.z, //yzxxz
-            z: self.x * rhs.y + self.y * rhs.x, //zxyyx
+            x: self.y * rhs.z - self.z * rhs.y, //xyzzy
+            y: self.z * rhs.x - self.x * rhs.z, //yzxxz
+            z: self.x * rhs.y - self.y * rhs.x, //zxyyx
         }
     }
 
@@ -96,6 +96,14 @@ impl Mul<f64> for Vec3 {
             y: self.y * rhs,
             z: self.z * rhs,
         }
+    }
+}
+
+impl MulAssign<f64> for Vec3 {
+    fn mul_assign(&mut self, rhs : f64) {
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
     }
 }
 
@@ -163,6 +171,13 @@ impl Add<Vec3> for Vec3 {
         }
     }
 }
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
 
 //subtract vector
 impl Sub<Vec3> for Vec3 {
@@ -176,7 +191,30 @@ impl Sub<Vec3> for Vec3 {
         }
     }
 }
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
+    }
+}
 
+//negate vector
+impl Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Self::Output {
+        Vec3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
+
+
+//sum up a list of vec3
 impl<'a> Sum<&'a Vec3> for Vec3 {
     fn sum<I: Iterator<Item = &'a Vec3>>(iter: I) -> Vec3 {
         let mut result = Vec3::new(0.0, 0.0, 0.0);
