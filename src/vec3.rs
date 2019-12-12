@@ -65,6 +65,56 @@ impl Vec3 {
         *self - 2.0 * self.dot(normal) * normal
     }
 
+    pub fn refract(&self, normal: Vec3, n_in: f64, n_out: f64) -> Option<Vec3> {
+        //    ＼     n
+        //   in ＼   ↑
+        //         ↘ |    n_in
+        //-----------+-------------
+        //   n_out   |\
+        //           | \ out
+        //           |  ↘
+        //sin(alpha_in) * n_in == sin(alpha_out) * n_out
+
+        //this could be written MUCH shorter, but because it is pretty hard to understand the formulas
+        //and what is going on, I have decided to make it very verbose
+        // if you don't understand what is happening, try these steps in geogebra (2d is enough)
+
+        //code from https://raytracing.github.io/books/RayTracingInOneWeekend.html#dielectrics
+        // vec3 uv = unit_vector(v); //v_in
+        // float dt = dot(uv, n);    //cos_in
+        // float discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt); //cos_out_squared
+        // if (discriminant > 0) {
+        //    refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
+        //    return true;
+        // }
+
+        let v_in = self.normalised();     // |v| == 1
+        let normal = normal.normalised(); // |n| == 1
+
+        let scale = n_in / n_out; //scale of the angle
+
+        let cos_in = v_in.dot(normal); // v · n == |v|*|n|*cos(angle(v,n)) 
+
+        let sin_in_squared = 1.0 - (cos_in * cos_in); // 1 - cos²(a) == sin²(a)
+       
+        let sin_out_squared = (scale * scale) * sin_in_squared; // sin²(alpha_in) * (n_in/n_out)² == sin²(alpha_out)
+        
+        let cos_out_squared = 1.0 - sin_out_squared; // 1 - sin²(a) == cos²(a) == refracted.dot(normal)²
+
+        //no refraction possible, total reflection
+        if cos_out_squared < 0.0 {
+            return None;
+        }
+
+        let normal_scaled_in = normal * cos_in; //normal scaled to be on same "height" as v_in
+        let normal_scaled_out = normal * cos_out_squared.sqrt(); //normal scaled to be on same "height" as v_out
+
+        let direction = v_in - normal_scaled_in;   //the "direction" v_in is pointing along the surface
+        let scaled_direction =  scale * direction;  //scaled by n_in / n_out to correct angle
+
+        Some(scaled_direction - normal_scaled_out) //final refracted vector
+    }
+
     pub fn random_in_unit_sphere() -> Vec3 {
         let mut rng = rand::thread_rng();
         let mut random_dir;

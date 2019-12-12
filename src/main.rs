@@ -20,8 +20,8 @@ mod renderer;
 mod sphere;
 mod vec3;
 
-const WIDTH: u32 = 1280;
-const HEIGHT: u32 = 720;
+const WIDTH: u32 = 800;
+const HEIGHT: u32 = 600;
 
 fn main() {
     //initialise SDL2
@@ -39,10 +39,10 @@ fn main() {
     let mut renderer = Renderer::new((WIDTH/2) as i32, (HEIGHT/2) as i32, 1);
 
     //create some materials
-    let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0);
-    let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0);
-    let sphere1_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 1.0);
-    let sphere2_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 0.0);
+    let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
+    let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0, 0.0);
+    let sphere1_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 1.0, 0.0);
+    let sphere2_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 0.0, 1.5);
 
     //diffuse sphere
     renderer.add_object(Box::new(Sphere {

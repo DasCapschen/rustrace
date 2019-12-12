@@ -28,7 +28,7 @@ impl Renderer {
             height,
             samples,
             camera: Camera::new(
-                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(2.0, 0.0, 0.0),
                 Vec3::new(0.0, 0.0, 1.0),
                 90.0, //hfov
                 width,
