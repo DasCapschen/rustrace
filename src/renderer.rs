@@ -2,7 +2,6 @@ use rand::Rng;
 
 use crate::camera::Camera;
 use crate::hittable::Hittable;
-use crate::light::Light;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
@@ -13,7 +12,6 @@ pub struct Renderer {
     samples: u8,
     pub camera: Camera,
     objects: Vec<Box<dyn Hittable>>,
-    lights: Vec<Light>,
 }
 
 impl Renderer {
@@ -23,30 +21,21 @@ impl Renderer {
         let dir = target - pos;
 
         Renderer {
-            pixels: vec![0; ((width*2) * (height*2) * 4) as usize], // * 4 because R, G, B, A!
+            pixels: vec![0; ((width * 2) * (height * 2) * 4) as usize], // * 4 because R, G, B, A!
             width,
             height,
             samples,
             camera: Camera::new(
-                pos,
-                dir,
-                90.0, //hfov
-                width,
-                height,
-                1.0, //if aperture = 0 ; focus dist is irrelevant
+                pos, dir, 90.0, //hfov
+                width, height, 1.0, //if aperture = 0 ; focus dist is irrelevant
                 0.0, //perfect camera => aperture = 0 ; => no DoF ; bigger aperture => stronger DoF
             ),
             objects: Vec::new(),
-            lights: Vec::new(),
         }
     }
 
     pub fn add_object(&mut self, object: Box<dyn Hittable>) {
         self.objects.push(object);
-    }
-
-    pub fn add_light(&mut self, light: Light) {
-        self.lights.push(light);
     }
 
     fn set_pixel(&mut self, x_in: i32, y_in: i32, color: Vec3) {
@@ -63,17 +52,17 @@ impl Renderer {
         let y = y_in * 2;
 
         let x_stride = 4; //because 4 color values
-        let y_stride = (self.width*2)*x_stride; //because every width pixel has 4 color values
+        let y_stride = (self.width * 2) * x_stride; //because every width pixel has 4 color values
 
         const B: i32 = 0;
         const G: i32 = 1;
         const R: i32 = 2;
         const A: i32 = 3;
 
-        let position = (x*x_stride) + (y*y_stride);
-        let position_right = ((x+1)*x_stride) + (y*y_stride);
-        let position_below = (x*x_stride) + ((y+1)*y_stride);
-        let position_diagonal = ((x+1)*x_stride) + ((y+1)*y_stride);
+        let position = (x * x_stride) + (y * y_stride);
+        let position_right = ((x + 1) * x_stride) + (y * y_stride);
+        let position_below = (x * x_stride) + ((y + 1) * y_stride);
+        let position_diagonal = ((x + 1) * x_stride) + ((y + 1) * y_stride);
 
         //actual pixel
         self.pixels[(B + position) as usize] = color.z.min(255.0).max(0.0) as u8;
@@ -150,33 +139,11 @@ impl Renderer {
             if let Some((attenuation, scattered_ray)) = hit.material.scatter(&ray_to_use, &hit) {
                 ray_to_use = scattered_ray;
                 final_attenuation = final_attenuation * attenuation;
-            }
-            else {
+            } else {
                 return Vec3::new(0.0, 0.0, 0.0);
             }
         }
 
         return color * final_attenuation;
-
-        /*
-        if let Some(hit) = object.hit(ray, 0.0001, std::f64::MAX) {
-            //if no lights, display normals
-            if self.lights.is_empty() {
-                let r = 0.5 * (hit.normal.x + 1.0);
-                let g = 0.5 * (hit.normal.y + 1.0);
-                let b = 0.5 * (hit.normal.z + 1.0);
-                return Vec3::new(r, g, b);
-            } else {
-                if let Some((attenuation, scattered_ray)) = hit.material.scatter(ray, &hit) {
-                    return attenuation * self.trace_color(&scattered_ray, object);
-                }
-                return Vec3::rgb(0, 0, 0);
-            }
-        } else {
-            //background gradient
-            let t = 0.5 * (ray.direction.normalised().y + 1.0);
-            return (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
-        }
-        */
     }
 }

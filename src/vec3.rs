@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::iter::Sum;
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Sub, SubAssign, Neg};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
 //auto-implement printing
 #[derive(Debug, Copy, Clone)]
@@ -88,17 +88,17 @@ impl Vec3 {
         //    return true;
         // }
 
-        let v_in = self.normalised();     // |v| == 1
+        let v_in = self.normalised(); // |v| == 1
         let normal = normal.normalised(); // |n| == 1
 
         let scale = n_in / n_out; //scale of the angle
 
-        let cos_in = v_in.dot(normal); // v · n == |v|*|n|*cos(angle(v,n)) 
+        let cos_in = v_in.dot(normal); // v · n == |v|*|n|*cos(angle(v,n))
 
         let sin_in_squared = 1.0 - (cos_in * cos_in); // 1 - cos²(a) == sin²(a)
-       
+
         let sin_out_squared = (scale * scale) * sin_in_squared; // sin²(alpha_in) * (n_in/n_out)² == sin²(alpha_out)
-        
+
         let cos_out_squared = 1.0 - sin_out_squared; // 1 - sin²(a) == cos²(a) == refracted.dot(normal)²
 
         //no refraction possible, total reflection
@@ -109,8 +109,8 @@ impl Vec3 {
         let normal_scaled_in = normal * cos_in; //normal scaled to be on same "height" as v_in
         let normal_scaled_out = normal * cos_out_squared.sqrt(); //normal scaled to be on same "height" as v_out
 
-        let direction = v_in - normal_scaled_in;   //the "direction" v_in is pointing along the surface
-        let scaled_direction =  scale * direction;  //scaled by n_in / n_out to correct angle
+        let direction = v_in - normal_scaled_in; //the "direction" v_in is pointing along the surface
+        let scaled_direction = scale * direction; //scaled by n_in / n_out to correct angle
 
         Some(scaled_direction - normal_scaled_out) //final refracted vector
     }
@@ -136,11 +136,7 @@ impl Vec3 {
         let mut rng = rand::thread_rng();
         let mut random_dir;
         loop {
-            random_dir = Vec3::new(
-                rng.gen_range(-1.0, 1.0),
-                rng.gen_range(-1.0, 1.0),
-                0.0,
-            );
+            random_dir = Vec3::new(rng.gen_range(-1.0, 1.0), rng.gen_range(-1.0, 1.0), 0.0);
             if random_dir.len() <= 1.0 {
                 break;
             }
@@ -167,7 +163,7 @@ impl Mul<f64> for Vec3 {
 }
 
 impl MulAssign<f64> for Vec3 {
-    fn mul_assign(&mut self, rhs : f64) {
+    fn mul_assign(&mut self, rhs: f64) {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;
@@ -278,8 +274,6 @@ impl Neg for Vec3 {
         }
     }
 }
-
-
 
 //sum up a list of vec3
 impl<'a> Sum<&'a Vec3> for Vec3 {

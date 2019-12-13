@@ -2,8 +2,6 @@ use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
 
-use crate::light::Light;
-
 use crate::material::Material;
 use crate::renderer::Renderer;
 use crate::sphere::Sphere;
@@ -13,7 +11,6 @@ use std::time::SystemTime;
 
 mod camera;
 mod hittable;
-mod light;
 mod material;
 mod ray;
 mod renderer;
@@ -36,7 +33,7 @@ fn main() {
         .unwrap();
 
     //create the actual raytracer
-    let mut renderer = Renderer::new((WIDTH/2) as i32, (HEIGHT/2) as i32, 64);
+    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 64);
 
     //create some materials
     let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
@@ -70,21 +67,15 @@ fn main() {
         material: ground_sphere_mat,
     }));
 
-    //albedo > 1 => emits light ; 
+    //albedo > 1 => emits light ;
     let light_material = Material::new(Vec3::new(1000.0, 1000.0, 1000.0), 0.0, 0.0, 0.0);
 
     //create a light
-    renderer.add_object(Box::new(Sphere{
+    renderer.add_object(Box::new(Sphere {
         center: Vec3::new(2.0, 1.5, 0.0),
         radius: 0.5,
-        material: light_material
+        material: light_material,
     }));
-    /*
-    renderer.add_light(Light::new(
-        Vec3::new(1.0, 2.0, -2.0),
-        Vec3::new(255.0, 255.0, 255.0),
-    ));
-    */
 
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();
@@ -97,17 +88,35 @@ fn main() {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
-                Event::MouseMotion{xrel, yrel, ..} => {
+                Event::MouseMotion { xrel, yrel, .. } => {
                     let dx = xrel as f64 / WIDTH as f64;
                     let dy = yrel as f64 / HEIGHT as f64;
                     renderer.camera.direction += Vec3::new(dx, -dy, 0.0);
                 }
-                Event::KeyDown {keycode: Some(Keycode::W), ..} => renderer.camera.position += Vec3::new(0.0, 0.0, 0.1),
-                Event::KeyDown {keycode: Some(Keycode::S), ..} => renderer.camera.position += Vec3::new(0.0, 0.0, -0.1),
-                Event::KeyDown {keycode: Some(Keycode::D), ..} => renderer.camera.position += Vec3::new(0.1, 0.0, 0.0),
-                Event::KeyDown {keycode: Some(Keycode::A), ..} => renderer.camera.position += Vec3::new(-0.1, 0.0, 0.0),
-                Event::KeyDown {keycode: Some(Keycode::Space), ..} => renderer.camera.position += Vec3::new(0.0, 0.1, 0.0),
-                Event::KeyDown {keycode: Some(Keycode::C), ..} => renderer.camera.position += Vec3::new(0.0, -0.1, 0.0),
+                Event::KeyDown {
+                    keycode: Some(Keycode::W),
+                    ..
+                } => renderer.camera.position += Vec3::new(0.0, 0.0, 0.1),
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => renderer.camera.position += Vec3::new(0.0, 0.0, -0.1),
+                Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                } => renderer.camera.position += Vec3::new(0.1, 0.0, 0.0),
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                } => renderer.camera.position += Vec3::new(-0.1, 0.0, 0.0),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => renderer.camera.position += Vec3::new(0.0, 0.1, 0.0),
+                Event::KeyDown {
+                    keycode: Some(Keycode::C),
+                    ..
+                } => renderer.camera.position += Vec3::new(0.0, -0.1, 0.0),
                 _ => {}
             }
         }

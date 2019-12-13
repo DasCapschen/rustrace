@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use rand::Rng;
+use std::fmt::Debug;
 
 use crate::hittable::HitResult;
 use crate::ray::Ray;
@@ -12,7 +12,7 @@ pub struct Material {
     metallic: f64,
     roughness: f64,
 
-    refraction: f64
+    refraction: f64,
 }
 
 impl Material {
@@ -21,7 +21,7 @@ impl Material {
             albedo,
             metallic: metal.max(0.0).min(1.0),
             roughness: roughness.max(0.0).min(1.0), //clamp() is unstable...
-            refraction //refraction index
+            refraction,                             //refraction index
         }
     }
 
@@ -46,17 +46,19 @@ impl Material {
         //refraction path
         if self.refraction > 0.0 {
             let (normal, n_in, n_out, cosine);
-            if ray.direction.dot(hit.normal) > 0.0 { //object -> air
-                normal = - hit.normal; //outward normal
+            if ray.direction.dot(hit.normal) > 0.0 {
+                //object -> air
+                normal = -hit.normal; //outward normal
                 n_in = self.refraction; //object
                 n_out = 1.0; //air
-                cosine = self.refraction * ray.direction.normalised().dot(hit.normal); // why refraction * v·n ?
-            }
-            else { //air -> object
+                cosine = self.refraction * ray.direction.normalised().dot(hit.normal);
+            // why refraction * v·n ?
+            } else {
+                //air -> object
                 normal = hit.normal;
                 n_in = 1.0;
                 n_out = self.refraction;
-                cosine = - ray.direction.normalised().dot(hit.normal); // why negative?
+                cosine = -ray.direction.normalised().dot(hit.normal); // why negative?
             }
 
             let p = rand::thread_rng().gen_range(0.0, 1.0);
