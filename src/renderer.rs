@@ -18,8 +18,8 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(width: i32, height: i32, samples: u8) -> Self {
-        let pos = Vec3::new(0.0, 0.0, -1.0);
-        let target = Vec3::new(0.0, 0.0, 1.0); //sphere center
+        let pos = Vec3::new(-5.0, 2.0, -3.0);
+        let target = Vec3::new(0.0, 0.0, 3.0); //sphere center
         let dir = target - pos;
 
         Renderer {
@@ -28,11 +28,13 @@ impl Renderer {
             height,
             samples,
             camera: Camera::new(
-                Vec3::new(2.0, 0.0, 0.0),
-                Vec3::new(0.0, 0.0, 1.0),
+                pos,
+                dir,
                 90.0, //hfov
                 width,
                 height,
+                1.0, //if aperture = 0 ; focus dist is irrelevant
+                0.0, //perfect camera => aperture = 0 ; => no DoF ; bigger aperture => stronger DoF
             ),
             objects: Vec::new(),
             lights: Vec::new(),
@@ -139,7 +141,8 @@ impl Renderer {
 
     fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
         let t = 0.5 * (ray.direction.normalised().y + 1.0);
-        let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
+        //let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
+        let color = (1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8);
 
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
