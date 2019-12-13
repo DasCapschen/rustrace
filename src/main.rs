@@ -20,8 +20,8 @@ mod renderer;
 mod sphere;
 mod vec3;
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 600;
+const WIDTH: u32 = 1280;
+const HEIGHT: u32 = 720;
 
 fn main() {
     //initialise SDL2
@@ -36,7 +36,7 @@ fn main() {
         .unwrap();
 
     //create the actual raytracer
-    let mut renderer = Renderer::new((WIDTH/2) as i32, (HEIGHT/2) as i32, 1);
+    let mut renderer = Renderer::new((WIDTH/2) as i32, (HEIGHT/2) as i32, 64);
 
     //create some materials
     let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
@@ -70,11 +70,21 @@ fn main() {
         material: ground_sphere_mat,
     }));
 
+    //albedo > 1 => emits light ; 
+    let light_material = Material::new(Vec3::new(1000.0, 1000.0, 1000.0), 0.0, 0.0, 0.0);
+
     //create a light
+    renderer.add_object(Box::new(Sphere{
+        center: Vec3::new(2.0, 1.5, 0.0),
+        radius: 0.5,
+        material: light_material
+    }));
+    /*
     renderer.add_light(Light::new(
         Vec3::new(1.0, 2.0, -2.0),
         Vec3::new(255.0, 255.0, 255.0),
     ));
+    */
 
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();
