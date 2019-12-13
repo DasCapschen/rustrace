@@ -122,9 +122,9 @@ fn main() {
         }
 
         //render the image
-        let start_time = SystemTime::now();
+        let _start_time = SystemTime::now();
         let pixels = renderer.draw_image();
-        let end_time = SystemTime::now();
+        let _end_time = SystemTime::now();
         //println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
 
         let mut surface = window.surface(&event_pump).unwrap();
