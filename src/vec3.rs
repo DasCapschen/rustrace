@@ -120,9 +120,26 @@ impl Vec3 {
         let mut random_dir;
         loop {
             random_dir = Vec3::new(
-                rng.gen_range(0.0, 1.0),
-                rng.gen_range(0.0, 1.0),
-                rng.gen_range(0.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+            );
+
+            if random_dir.len() <= 1.0 {
+                break;
+            }
+        }
+        random_dir
+    }
+
+    pub fn random_in_unit_disk() -> Vec3 {
+        let mut rng = rand::thread_rng();
+        let mut random_dir;
+        loop {
+            random_dir = Vec3::new(
+                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+                0.0,
             );
             if random_dir.len() <= 1.0 {
                 break;
