@@ -4,18 +4,23 @@ use sdl2::keyboard::Keycode;
 
 use crate::material::Material;
 use crate::renderer::Renderer;
-use crate::sphere::Sphere;
+use crate::hittables::primitives::{Sphere, Plane};
 use crate::vec3::Vec3;
 
 use std::time::SystemTime;
 
 mod camera;
-mod hittable;
 mod material;
 mod ray;
 mod renderer;
-mod sphere;
 mod vec3;
+
+mod hittable;
+mod hittables {
+    pub mod aabb;
+    pub mod mesh;
+    pub mod primitives;
+}
 
 const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
@@ -61,11 +66,20 @@ fn main() {
     }));
 
     //"ground"
+    renderer.add_object(Box::new(Plane{
+        center: Vec3::new(0.0, -3.0, 0.0),
+        span_a: Vec3::new(0.0, 0.0, 1.0), //swap span_a and span_b to flip normal
+        span_b: Vec3::new(1.0, 0.0, 0.0),
+        infinite: true,
+        material: ground_sphere_mat,
+    }));
+    /*
     renderer.add_object(Box::new(Sphere {
         center: Vec3::new(0.0, -100.9, 1.0),
         radius: 100.0,
         material: ground_sphere_mat,
     }));
+    */
 
     //albedo > 1 => emits light ;
     let light_material = Material::new(Vec3::new(1000.0, 1000.0, 1000.0), 0.0, 0.0, 0.0);
