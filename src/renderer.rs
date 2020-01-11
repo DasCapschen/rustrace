@@ -130,8 +130,8 @@ impl Renderer {
 
     fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
         let t = 0.5 * (ray.direction.normalised().y + 1.0);
-        //let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
-        let color = (1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8);
+        let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
+        //let color = (1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8);
 
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);

@@ -5,6 +5,7 @@ use crate::hittable::{HitResult, Hittable};
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
+use crate::hittables::aabb::AABB;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sphere {
@@ -54,6 +55,13 @@ impl Hittable for Sphere {
                 material: self.material.clone(),
             })
         }
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius)
+        ))
     }
 }
 
@@ -130,6 +138,13 @@ impl Hittable for Plane {
 
         Some(result)
     }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - self.span_a - self.span_b,
+            self.center + self.span_a + self.span_b
+        ))
+    }
 }
 
 pub struct Triangle {
@@ -147,6 +162,10 @@ pub struct Triangle {
 
 impl Hittable for Triangle {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+        None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
         None
     }
 }

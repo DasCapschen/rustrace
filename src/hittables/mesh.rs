@@ -4,18 +4,24 @@ use crate::hittables::primitives::Triangle;
 use crate::hittable::{Hittable, HitResult};
 use crate::ray::Ray;
 use crate::vec3::Vec3;
+use crate::hittables::aabb::AABB;
 
 pub struct Mesh {
     position: Vec3,
     faces: Vec<Triangle>,
+    bounding_box: Option<AABB>
 }
 
 impl Mesh {
     pub fn new(file: &Path) -> Self {
         //TODO: load file
+        let faces = Vec::new();
+        let bounding_box = faces.bounding_box();
+
         Mesh {
             position: Vec3::new(0.0, 0.0, 0.0),
-            faces: Vec::new(),
+            faces,
+            bounding_box
         }
     }
 }
@@ -37,5 +43,9 @@ impl Hittable for Mesh {
         }
 
         None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        self.bounding_box
     }
 }

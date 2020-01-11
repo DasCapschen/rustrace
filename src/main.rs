@@ -38,7 +38,7 @@ fn main() {
         .unwrap();
 
     //create the actual raytracer
-    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 64);
+    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 4);
 
     //create some materials
     let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
@@ -82,7 +82,7 @@ fn main() {
     */
 
     //albedo > 1 => emits light ;
-    let light_material = Material::new(Vec3::new(1000.0, 1000.0, 1000.0), 0.0, 0.0, 0.0);
+    let light_material = Material::new(Vec3::new(1000.0, 750.0, 500.0), 0.0, 0.0, 0.0);
 
     //create a light
     renderer.add_object(Box::new(Sphere {
