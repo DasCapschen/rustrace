@@ -24,8 +24,8 @@ mod hittables {
     pub mod primitives;
 }
 
-const WIDTH: u32 = 400;
-const HEIGHT: u32 = 300;
+const WIDTH: u32 = 600;
+const HEIGHT: u32 = 400;
 
 fn main() {
     //initialise SDL2
@@ -39,11 +39,31 @@ fn main() {
         .build()
         .unwrap();
 
+    //hide cursor, lock mouse to window
+    sdl2_context.mouse().set_relative_mouse_mode(true);
+
     //create the actual raytracer
-    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 16);
+    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 1);
+
+    //create a 10x10x10 cube of spheres with colorful colors
+    for x in 0..10u8 {
+        for y in 0..10u8 {
+            for z in 0..10u8 {
+                let r = (x as f64 * (220.0 / 10.0) + 10.0) as u8;
+                let g = (y as f64 * (220.0 / 10.0) + 10.0) as u8;
+                let b = (z as f64 * (220.0 / 10.0) + 10.0) as u8;
+
+                renderer.add_object(Arc::new(Sphere {
+                    center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
+                    radius: 0.5,
+                    material: Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0)
+                }));
+            }
+        }
+    }
 
     //create some materials
-    let ground_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
+    /*let ground_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
     let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0, 0.0);
     let sphere1_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 0.75, 0.0);
     let sphere2_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 0.0, 1.5);
@@ -95,6 +115,7 @@ fn main() {
         radius: 750.0,
         material: light_material,
     }));*/
+    */
 
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();
@@ -110,41 +131,42 @@ fn main() {
                 Event::MouseMotion { xrel, yrel, .. } => {
                     let dx = xrel as f64 / WIDTH as f64;
                     let dy = yrel as f64 / HEIGHT as f64;
+                    //this allows rotation in the positive half-space!
                     renderer.camera.direction += Vec3::new(dx, -dy, 0.0);
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
                     ..
-                } => renderer.camera.position += Vec3::new(0.0, 0.0, 0.1),
+                } => renderer.camera.position += 0.1 * renderer.camera.forward(),
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
-                } => renderer.camera.position += Vec3::new(0.0, 0.0, -0.1),
+                } => renderer.camera.position += -0.1 * renderer.camera.forward(),
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
-                } => renderer.camera.position += Vec3::new(0.1, 0.0, 0.0),
+                } => renderer.camera.position += 0.1 * renderer.camera.right(),
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
-                } => renderer.camera.position += Vec3::new(-0.1, 0.0, 0.0),
+                } => renderer.camera.position += -0.1 * renderer.camera.right(),
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
                     ..
-                } => renderer.camera.position += Vec3::new(0.0, 0.1, 0.0),
+                } => renderer.camera.position += 0.1 * renderer.camera.up(),
                 Event::KeyDown {
                     keycode: Some(Keycode::C),
                     ..
-                } => renderer.camera.position += Vec3::new(0.0, -0.1, 0.0),
+                } => renderer.camera.position += -0.1 * renderer.camera.up(),
                 _ => {}
             }
         }
 
         //render the image
-        let _start_time = SystemTime::now();
+        let start_time = SystemTime::now();
         let pixels = renderer.draw_image();
-        let _end_time = SystemTime::now();
-        //println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
+        let end_time = SystemTime::now();
+        println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
 
         let mut surface = window.surface(&event_pump).unwrap();
 

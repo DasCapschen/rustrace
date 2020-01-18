@@ -48,4 +48,8 @@ impl Hittable for Mesh {
     fn bounding_box(&self) -> Option<AABB> {
         self.bounding_box
     }
+
+    fn center(&self) -> Vec3 {
+        self.position
+    }
 }

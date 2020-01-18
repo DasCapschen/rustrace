@@ -113,6 +113,9 @@ impl Renderer {
                         y as f64 + rng.gen_range(0.0, 1.0),
                     );
 
+                    //*really* hacky, but what gives, BVH confirmed working
+                    //final_color = bvh.debug_hit(&ray, 0.0001, std::f64::MAX);
+
                     //bvh slows us down in small example scenes!
                     final_color = final_color + self.trace_color(&ray, &bvh);
                 }

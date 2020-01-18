@@ -32,13 +32,25 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(&self, x: f64, y: f64) -> Ray {
+    pub fn forward(&self) -> Vec3 {
+        self.direction.normalised()
+    }
+
+    pub fn right(&self) -> Vec3 {
         const global_up: Vec3 = Vec3 {
             x: 0.0,
             y: 1.0,
             z: 0.0,
         };
 
+        global_up.cross(self.forward()).normalised()
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.forward().cross(self.right()).normalised()
+    }
+
+    pub fn get_ray(&self, x: f64, y: f64) -> Ray {
         //yes, this is very verbose on purpose, I know it can be optimised
         //but tbh, the compiler probably does that for us
 
@@ -71,9 +83,9 @@ impl Camera {
 
         //calculate local coordinate system
         //let forward = (self.target - self.position).normalised();
-        let forward = self.direction.normalised();
-        let right = global_up.cross(forward).normalised() * scale;
-        let up = forward.cross(right).normalised() * -scale; //negative because (0,0) is TOP right
+        let forward = self.forward();
+        let right = self.right() * scale;
+        let up = self.up() * -scale; //negative because (0,0) is TOP right
 
         let center = self.position + forward * self.focus_dist; //focus_dist -> move focus plane (Z, depth)
 

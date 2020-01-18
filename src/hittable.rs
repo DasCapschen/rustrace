@@ -17,6 +17,7 @@ pub struct HitResult {
 pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
     fn bounding_box(&self) -> Option<AABB>;
+    fn center(&self) -> Vec3;
 }
 
 /* make hittable cloneable
@@ -87,6 +88,10 @@ impl Hittable for Vec<Arc<dyn Hittable>> {
             return None;
         }
     }
+
+    fn center(&self) -> Vec3 {
+        todo!()
+    }
 }
 
 impl Hittable for [Arc<dyn Hittable>] {
@@ -112,6 +117,10 @@ impl Hittable for [Arc<dyn Hittable>] {
             }
             None
         }
+    }
+
+    fn center(&self) -> Vec3 {
+        todo!()
     }
 }
 
@@ -166,5 +175,9 @@ where
             //if first object has no bb, no bb at all!
             return None;
         }
+    }
+
+    fn center(&self) -> Vec3 {
+        todo!()
     }
 }

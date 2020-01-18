@@ -63,6 +63,10 @@ impl Hittable for Sphere {
             self.center + Vec3::new(self.radius, self.radius, self.radius),
         ))
     }
+
+    fn center(&self) -> Vec3 {
+        self.center
+    }
 }
 
 pub struct Plane {
@@ -147,6 +151,10 @@ impl Hittable for Plane {
             self.center + self.span_a + self.span_b,
         ))
     }
+
+    fn center(&self) -> Vec3 {
+        self.center
+    }
 }
 
 pub struct Triangle {
@@ -169,5 +177,9 @@ impl Hittable for Triangle {
 
     fn bounding_box(&self) -> Option<AABB> {
         None
+    }
+
+    fn center(&self) -> Vec3 {
+        self.center
     }
 }
