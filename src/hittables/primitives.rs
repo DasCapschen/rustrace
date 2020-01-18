@@ -2,10 +2,10 @@ use std::clone::Clone;
 use std::fmt::Debug;
 
 use crate::hittable::{HitResult, Hittable};
+use crate::hittables::aabb::AABB;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::hittables::aabb::AABB;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sphere {
@@ -60,7 +60,7 @@ impl Hittable for Sphere {
     fn bounding_box(&self) -> Option<AABB> {
         Some(AABB::new(
             self.center - Vec3::new(self.radius, self.radius, self.radius),
-            self.center + Vec3::new(self.radius, self.radius, self.radius)
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
         ))
     }
 }
@@ -93,7 +93,7 @@ impl Hittable for Plane {
         // t = -((origin - center) · normal)/(direction · normal)
 
         let normal = self.span_a.cross(self.span_b);
-        let parameter = - (ray.origin - self.center).dot(normal) / ray.direction.dot(normal);
+        let parameter = -(ray.origin - self.center).dot(normal) / ray.direction.dot(normal);
 
         //no hit if outside [min, max]
         if parameter < t_min || parameter > t_max {
@@ -122,16 +122,17 @@ impl Hittable for Plane {
             //then, hit_on_span_a = (3,2) - (0,1) * 2 = (3,0)
             //then, hit_on_span_b = (3,2) - (1,0) * 3 = (0,2)
             // see vector_in_plane.ggb (geogebra)
-            let hit_on_span_a = relative_hit - b_normalised * ( relative_hit.dot(b_normalised) );
-            let hit_on_span_b = relative_hit - a_normalised * ( relative_hit.dot(a_normalised) );
-            
+            let hit_on_span_a = relative_hit - b_normalised * (relative_hit.dot(b_normalised));
+            let hit_on_span_b = relative_hit - a_normalised * (relative_hit.dot(a_normalised));
+
             //len squared saves us a sqrt() -> faster
             //also lets us handle + and - direction (because centered)
             let len_span_a = self.span_a.len_squared();
             let len_span_b = self.span_b.len_squared();
 
-            //hit outside 
-            if hit_on_span_a.len_squared() > len_span_a || hit_on_span_b.len_squared() > len_span_b {
+            //hit outside
+            if hit_on_span_a.len_squared() > len_span_a || hit_on_span_b.len_squared() > len_span_b
+            {
                 return None;
             }
         }
@@ -142,17 +143,17 @@ impl Hittable for Plane {
     fn bounding_box(&self) -> Option<AABB> {
         Some(AABB::new(
             self.center - self.span_a - self.span_b,
-            self.center + self.span_a + self.span_b
+            self.center + self.span_a + self.span_b,
         ))
     }
 }
 
 pub struct Triangle {
-    // + 
-    // ↑ \  
-    // b   \ 
+    // +
+    // ↑ \
+    // b   \
     // |     \
-    // *--a-->+ 
+    // *--a-->+
     // normal = a x b
     pub center: Vec3,
     pub span_a: Vec3,
@@ -161,7 +162,7 @@ pub struct Triangle {
 }
 
 impl Hittable for Triangle {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
         None
     }
 

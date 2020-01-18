@@ -1,11 +1,11 @@
-use std::sync::Arc;
 use rand::Rng;
+use std::sync::Arc;
 
 use crate::camera::Camera;
 use crate::hittable::Hittable;
+use crate::hittables::bvh::BvhNode;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::hittables::bvh::BvhNode;
 
 pub struct Renderer {
     pixels: Vec<u8>,
@@ -100,7 +100,7 @@ impl Renderer {
         //draw image
         let mut rng = rand::thread_rng();
 
-        let mut bvh = BvhNode::from_hittables(&self.objects[..]).unwrap();
+        let bvh = BvhNode::from_hittables(&self.objects[..]).unwrap();
 
         for x in 0..self.width {
             for y in 0..self.height {

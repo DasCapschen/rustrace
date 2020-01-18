@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use std::fmt::Debug;
+use std::sync::Arc;
 
+use crate::hittables::aabb::AABB;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::hittables::aabb::AABB;
 
 #[derive(Debug, Copy, Clone)]
 pub struct HitResult {
@@ -19,12 +19,12 @@ pub trait Hittable: Send + Sync {
     fn bounding_box(&self) -> Option<AABB>;
 }
 
-/* make hittable cloneable 
+/* make hittable cloneable
 trait HittableClone {
     fn box_clone(&self) -> Box<dyn Hittable>;
 }
 
-impl<T> HittableClone for T 
+impl<T> HittableClone for T
     where T: Hittable + 'static + Clone {
         fn box_clone(&self) -> Box<dyn Hittable> {
             Box::new(self.clone())
@@ -74,8 +74,7 @@ impl Hittable for Vec<Arc<dyn Hittable>> {
                 if let Some(bb2) = obj.bounding_box() {
                     //and then make a new bounding box containing both bounding boxes!
                     bb = AABB::surrounding_box(&bb, &bb2);
-                }
-                else {
+                } else {
                     //if something has no bounding box, we don't have a bounding box at all!
                     return None;
                 }
@@ -83,8 +82,7 @@ impl Hittable for Vec<Arc<dyn Hittable>> {
 
             //return bb containing all bbs.
             return Some(bb);
-        }
-        else {
+        } else {
             //if first object has no bb, no bb at all!
             return None;
         }
@@ -92,24 +90,21 @@ impl Hittable for Vec<Arc<dyn Hittable>> {
 }
 
 impl Hittable for [Arc<dyn Hittable>] {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
         None
     }
 
     fn bounding_box(&self) -> Option<AABB> {
         if self.len() == 0 {
             None
-        }
-        else if self.len() == 1 {
+        } else if self.len() == 1 {
             self[0].bounding_box()
-        }
-        else {
+        } else {
             if let Some(mut bb) = self[0].bounding_box() {
                 for h in &self[1..] {
                     if let Some(bb2) = h.bounding_box() {
                         bb = AABB::surrounding_box(&bb, &bb2);
-                    }
-                    else {
+                    } else {
                         return None;
                     }
                 }
@@ -122,8 +117,10 @@ impl Hittable for [Arc<dyn Hittable>] {
 
 //hit a list of specific hittable
 //useful for hitting triangles of a mesh
-impl<T> Hittable for Vec<T> 
-    where T: Hittable {
+impl<T> Hittable for Vec<T>
+where
+    T: Hittable,
+{
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;
@@ -157,8 +154,7 @@ impl<T> Hittable for Vec<T>
                 if let Some(bb2) = obj.bounding_box() {
                     //and then make a new bounding box containing both bounding boxes!
                     bb = AABB::surrounding_box(&bb, &bb2);
-                }
-                else {
+                } else {
                     //if something has no bounding box, we don't have a bounding box at all!
                     return None;
                 }
@@ -166,8 +162,7 @@ impl<T> Hittable for Vec<T>
 
             //return bb containing all bbs.
             return Some(bb);
-        }
-        else {
+        } else {
             //if first object has no bb, no bb at all!
             return None;
         }

@@ -1,4 +1,4 @@
-use crate::hittable::{HitResult, Hittable};
+
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::mem::swap;
@@ -7,35 +7,32 @@ use std::mem::swap;
 #[derive(Debug, Copy, Clone)]
 pub struct AABB {
     start: Vec3, //start < end !!
-    end: Vec3 //end > start !!
+    end: Vec3,   //end > start !!
 }
 
 impl AABB {
-    pub fn new(start : Vec3, end : Vec3) -> Self {
+    pub fn new(start: Vec3, end: Vec3) -> Self {
         //start < end !
         if start.len_squared() > end.len_squared() {
             let temp = start;
-            let start = end;
-            let end = temp;
+            let _start = end;
+            let _end = temp;
         }
 
-        Self {
-            start,
-            end
-        }
+        Self { start, end }
     }
 
-    pub fn surrounding_box(box1 : &Self, box2 : &Self) -> Self {
+    pub fn surrounding_box(box1: &Self, box2: &Self) -> Self {
         Self {
             start: Vec3::new(
                 box1.start.x.min(box2.start.x),
                 box1.start.y.min(box2.start.y),
-                box1.start.z.min(box2.start.z)
+                box1.start.z.min(box2.start.z),
             ),
             end: Vec3::new(
                 box1.end.x.max(box2.end.x),
                 box1.end.y.max(box2.end.y),
-                box1.end.z.max(box2.end.z)
+                box1.end.z.max(box2.end.z),
             ),
         }
     }
@@ -77,14 +74,14 @@ impl AABB {
 
         //check if y-hit overlaps x-hit
         if t_max < t_min {
-            return false
+            return false;
         }
 
         //limit hit interval to xyz-hit and check if it overlaps xy-hit
         let t_min = if t0_z > t_min { t0_z } else { t_min };
         let t_max = if t1_z < t_max { t1_z } else { t_max };
         if t_max < t_min {
-            return false
+            return false;
         }
 
         true

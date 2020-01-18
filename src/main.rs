@@ -2,13 +2,13 @@ use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
 
+use crate::hittables::primitives::{Plane, Sphere};
 use crate::material::Material;
 use crate::renderer::Renderer;
-use crate::hittables::primitives::{Sphere, Plane};
 use crate::vec3::Vec3;
 
-use std::time::SystemTime;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 mod camera;
 mod material;
@@ -19,9 +19,9 @@ mod vec3;
 mod hittable;
 mod hittables {
     pub mod aabb;
+    pub mod bvh;
     pub mod mesh;
     pub mod primitives;
-    pub mod bvh;
 }
 
 const WIDTH: u32 = 1280;
@@ -68,14 +68,14 @@ fn main() {
     }));
 
     //"ground"
-    renderer.add_object(Arc::new(Plane{
+    renderer.add_object(Arc::new(Plane {
         center: Vec3::new(0.0, -3.0, 0.0),
         span_a: Vec3::new(0.0, 0.0, 1.0), //swap span_a and span_b to flip normal
         span_b: Vec3::new(1.0, 0.0, 0.0),
         infinite: true,
         material: ground_sphere_mat,
     }));
-    
+
     /*
     renderer.add_object(Box::new(Sphere {
         center: Vec3::new(0.0, -100.9, 1.0),
@@ -83,7 +83,6 @@ fn main() {
         material: ground_sphere_mat,
     }));
     */
-    
 
     //albedo > 1 => emits light ;
     let light_material = Material::new(Vec3::new(1000.0, 750.0, 500.0), 0.0, 0.0, 0.0);

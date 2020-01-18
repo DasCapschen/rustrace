@@ -1,8 +1,8 @@
-use std::sync::Arc;
-use std::rc::Rc;
-use crate::ray::Ray;
-use crate::hittables::aabb::AABB;
 use crate::hittable::{HitResult, Hittable};
+use crate::hittables::aabb::AABB;
+use crate::ray::Ray;
+
+use std::sync::Arc;
 
 pub struct BvhNode {
     bb: AABB,
@@ -15,7 +15,7 @@ impl BvhNode {
     pub fn from_hittables(list: &[Arc<dyn Hittable>]) -> Option<BvhNode> {
         //if empty list, return nothing
         if list.is_empty() {
-            return None
+            return None;
         }
         //if list is 1 element
         else if list.len() == 1 {
@@ -24,15 +24,13 @@ impl BvhNode {
                 hittable: Some(list[0].clone()),
                 left: None,
                 right: None,
-            })
-        }
-        else {
-
-            let left_node = match BvhNode::from_hittables(&list[..list.len()/2]) {
+            });
+        } else {
+            let left_node = match BvhNode::from_hittables(&list[..list.len() / 2]) {
                 Some(node) => Some(Box::new(node)),
                 None => None,
             };
-            let right_node = match BvhNode::from_hittables(&list[list.len()/2..]) {
+            let right_node = match BvhNode::from_hittables(&list[list.len() / 2..]) {
                 Some(node) => Some(Box::new(node)),
                 None => None,
             };
@@ -42,9 +40,8 @@ impl BvhNode {
                 hittable: None,
                 left: left_node,
                 right: right_node,
-            })
+            });
         }
-
     }
 }
 
@@ -60,11 +57,11 @@ impl Hittable for BvhNode {
             //otherwise, check left and right children
             let left_hit = match &self.left {
                 Some(node) => node.hit(ray, t_min, t_max),
-                None => None
+                None => None,
             };
             let right_hit = match &self.right {
                 Some(node) => node.hit(ray, t_min, t_max),
-                None => None
+                None => None,
             };
 
             if let Some(hit1) = left_hit {
@@ -74,19 +71,16 @@ impl Hittable for BvhNode {
                     }
                 }
                 return Some(hit1);
-            }
-            else if let Some(hit2) = right_hit {
+            } else if let Some(hit2) = right_hit {
                 return Some(hit2);
-            }
-            else {
+            } else {
                 return None;
             }
-
         }
         None
     }
 
     fn bounding_box(&self) -> Option<AABB> {
         Some(self.bb)
-    } 
+    }
 }
