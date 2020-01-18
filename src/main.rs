@@ -24,8 +24,8 @@ mod hittables {
     pub mod primitives;
 }
 
-const WIDTH: u32 = 1280;
-const HEIGHT: u32 = 720;
+const WIDTH: u32 = 400;
+const HEIGHT: u32 = 300;
 
 fn main() {
     //initialise SDL2
@@ -40,12 +40,12 @@ fn main() {
         .unwrap();
 
     //create the actual raytracer
-    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 4);
+    let mut renderer = Renderer::new((WIDTH / 2) as i32, (HEIGHT / 2) as i32, 16);
 
     //create some materials
-    let ground_sphere_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
+    let ground_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
     let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0, 0.0);
-    let sphere1_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 1.0, 0.0);
+    let sphere1_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 0.75, 0.0);
     let sphere2_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 0.0, 1.5);
 
     //diffuse sphere
@@ -68,31 +68,33 @@ fn main() {
     }));
 
     //"ground"
+    //BVH current does not support infinite planes!
+    
     renderer.add_object(Arc::new(Plane {
         center: Vec3::new(0.0, -3.0, 0.0),
-        span_a: Vec3::new(0.0, 0.0, 1.0), //swap span_a and span_b to flip normal
-        span_b: Vec3::new(1.0, 0.0, 0.0),
-        infinite: true,
-        material: ground_sphere_mat,
+        span_a: Vec3::new(0.0, 0.0, 50.0), //swap span_a and span_b to flip normal
+        span_b: Vec3::new(50.0, 0.0, 0.0),
+        infinite: false,
+        material: ground_mat,
     }));
-
+    
     /*
-    renderer.add_object(Box::new(Sphere {
-        center: Vec3::new(0.0, -100.9, 1.0),
+    renderer.add_object(Arc::new(Sphere {
+        center: Vec3::new(0.0, -103.0, 0.0),
         radius: 100.0,
-        material: ground_sphere_mat,
+        material: ground_mat,
     }));
     */
-
+    
     //albedo > 1 => emits light ;
-    let light_material = Material::new(Vec3::new(1000.0, 750.0, 500.0), 0.0, 0.0, 0.0);
+    //let light_material = Material::new(Vec3::new(5.0, 5.0, 5.0), 0.0, 0.0, 0.0);
 
     //create a light
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(2.0, 1.5, 0.0),
-        radius: 0.5,
+    /*renderer.add_object(Arc::new(Sphere {
+        center: Vec3::new(200.0, 500.0, -1000.0),
+        radius: 750.0,
         material: light_material,
-    }));
+    }));*/
 
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();

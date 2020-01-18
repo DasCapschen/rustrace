@@ -37,6 +37,7 @@ impl Material {
                 + self.roughness * Vec3::random_in_unit_sphere();
 
             //if, for some reason, we reflect *into* the object, absorb the ray
+            //tutorial says this is correct, but leads to black spots around the edge of the sphere :/
             if reflected.dot(hit.normal) < 0.0 {
                 return None;
             }

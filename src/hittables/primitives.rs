@@ -92,7 +92,8 @@ impl Hittable for Plane {
         // t * direction · normal = - (origin - center) · normal
         // t = -((origin - center) · normal)/(direction · normal)
 
-        let normal = self.span_a.cross(self.span_b);
+        //NORMALISE THE NORMAL!!
+        let normal = self.span_a.cross(self.span_b).normalised();
         let parameter = -(ray.origin - self.center).dot(normal) / ray.direction.dot(normal);
 
         //no hit if outside [min, max]

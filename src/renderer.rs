@@ -113,10 +113,8 @@ impl Renderer {
                         y as f64 + rng.gen_range(0.0, 1.0),
                     );
 
+                    //bvh slows us down in small example scenes!
                     final_color = final_color + self.trace_color(&ray, &bvh);
-
-                    //do expensive calculations
-                    //final_color = final_color + self.trace_color(&ray, &self.objects);
                 }
 
                 //normalize color after sampling a lot
@@ -152,7 +150,7 @@ impl Renderer {
     }
 
     fn background_color(&self, t: f64) -> Vec3 {
-        (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255)
+        (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255) //day
         //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8) //night
     }
 }

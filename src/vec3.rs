@@ -59,9 +59,18 @@ impl Vec3 {
 
     pub fn reflect(&self, normal: Vec3) -> Vec3 {
         //        \   n   ↗
-        //       in\  ↑  / reflected
-        //          ↘ | /
-        //   ---------+---------
+        //       in\  ↑  /   reflected
+        //          ↘ | /  
+        //   ---------+----+----
+        //             \   ↑
+        //      also in \  | - n * in·n
+        //               ↘ |
+        // => in + 2*(-n * in·n)
+
+        // self.dot(normal) => cos(angle between self and normal)
+        // normal * ^ => normal scaled to the "height" of self
+        // 2 * ^
+
         *self - 2.0 * self.dot(normal) * normal
     }
 
