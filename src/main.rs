@@ -8,6 +8,7 @@ use crate::hittables::primitives::{Sphere, Plane};
 use crate::vec3::Vec3;
 
 use std::time::SystemTime;
+use std::sync::Arc;
 
 mod camera;
 mod material;
@@ -20,6 +21,7 @@ mod hittables {
     pub mod aabb;
     pub mod mesh;
     pub mod primitives;
+    pub mod bvh;
 }
 
 const WIDTH: u32 = 1280;
@@ -47,32 +49,33 @@ fn main() {
     let sphere2_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 0.0, 1.5);
 
     //diffuse sphere
-    renderer.add_object(Box::new(Sphere {
+    renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(0.0, 0.0, 3.0),
         radius: 1.0,
         material: diffuse_sphere_mat,
     }));
 
     //2 metal reflector spheres
-    renderer.add_object(Box::new(Sphere {
+    renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(-2.0, 0.0, 3.0),
         radius: 1.0,
         material: sphere1_mat,
     }));
-    renderer.add_object(Box::new(Sphere {
+    renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(2.0, 0.0, 3.0),
         radius: 1.0,
         material: sphere2_mat,
     }));
 
     //"ground"
-    renderer.add_object(Box::new(Plane{
+    renderer.add_object(Arc::new(Plane{
         center: Vec3::new(0.0, -3.0, 0.0),
         span_a: Vec3::new(0.0, 0.0, 1.0), //swap span_a and span_b to flip normal
         span_b: Vec3::new(1.0, 0.0, 0.0),
         infinite: true,
         material: ground_sphere_mat,
     }));
+    
     /*
     renderer.add_object(Box::new(Sphere {
         center: Vec3::new(0.0, -100.9, 1.0),
@@ -80,12 +83,13 @@ fn main() {
         material: ground_sphere_mat,
     }));
     */
+    
 
     //albedo > 1 => emits light ;
     let light_material = Material::new(Vec3::new(1000.0, 750.0, 500.0), 0.0, 0.0, 0.0);
 
     //create a light
-    renderer.add_object(Box::new(Sphere {
+    renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(2.0, 1.5, 0.0),
         radius: 0.5,
         material: light_material,

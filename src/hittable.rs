@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::fmt::Debug;
 
 use crate::material::Material;
@@ -18,9 +19,28 @@ pub trait Hittable: Send + Sync {
     fn bounding_box(&self) -> Option<AABB>;
 }
 
+/* make hittable cloneable 
+trait HittableClone {
+    fn box_clone(&self) -> Box<dyn Hittable>;
+}
+
+impl<T> HittableClone for T 
+    where T: Hittable + 'static + Clone {
+        fn box_clone(&self) -> Box<dyn Hittable> {
+            Box::new(self.clone())
+        }
+}
+
+impl Clone for Box<dyn Hittable> {
+    fn clone(&self) -> Self {
+        self.box_clone()
+    }
+}
+*/
+
 // hit a list of any hittables
 // useful for hitting world (all objects) in renderer
-impl Hittable for Vec<Box<dyn Hittable>> {
+impl Hittable for Vec<Arc<dyn Hittable>> {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;
@@ -67,6 +87,35 @@ impl Hittable for Vec<Box<dyn Hittable>> {
         else {
             //if first object has no bb, no bb at all!
             return None;
+        }
+    }
+}
+
+impl Hittable for [Arc<dyn Hittable>] {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+        None
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        if self.len() == 0 {
+            None
+        }
+        else if self.len() == 1 {
+            self[0].bounding_box()
+        }
+        else {
+            if let Some(mut bb) = self[0].bounding_box() {
+                for h in &self[1..] {
+                    if let Some(bb2) = h.bounding_box() {
+                        bb = AABB::surrounding_box(&bb, &bb2);
+                    }
+                    else {
+                        return None;
+                    }
+                }
+                return Some(bb);
+            }
+            None
         }
     }
 }

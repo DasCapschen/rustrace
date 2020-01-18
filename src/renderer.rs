@@ -1,9 +1,11 @@
+use std::sync::Arc;
 use rand::Rng;
 
 use crate::camera::Camera;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
+use crate::hittables::bvh::BvhNode;
 
 pub struct Renderer {
     pixels: Vec<u8>,
@@ -11,7 +13,7 @@ pub struct Renderer {
     height: i32,
     samples: u8,
     pub camera: Camera,
-    objects: Vec<Box<dyn Hittable>>,
+    objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl Renderer {
@@ -34,7 +36,7 @@ impl Renderer {
         }
     }
 
-    pub fn add_object(&mut self, object: Box<dyn Hittable>) {
+    pub fn add_object(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object);
     }
 
@@ -98,6 +100,8 @@ impl Renderer {
         //draw image
         let mut rng = rand::thread_rng();
 
+        let mut bvh = BvhNode::from_hittables(&self.objects[..]).unwrap();
+
         for x in 0..self.width {
             for y in 0..self.height {
                 let mut final_color = Vec3::rgb(0, 0, 0);
@@ -108,8 +112,11 @@ impl Renderer {
                         x as f64 + rng.gen_range(0.0, 1.0),
                         y as f64 + rng.gen_range(0.0, 1.0),
                     );
+
+                    final_color = final_color + self.trace_color(&ray, &bvh);
+
                     //do expensive calculations
-                    final_color = final_color + self.trace_color(&ray, &self.objects);
+                    //final_color = final_color + self.trace_color(&ray, &self.objects);
                 }
 
                 //normalize color after sampling a lot
@@ -129,10 +136,6 @@ impl Renderer {
     }
 
     fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
-        let t = 0.5 * (ray.direction.normalised().y + 1.0);
-        let color = (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255);
-        //let color = (1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8);
-
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
@@ -144,6 +147,12 @@ impl Renderer {
             }
         }
 
-        return color * final_attenuation;
+        let t = 0.5 * (ray.direction.normalised().y + 1.0);
+        return self.background_color(t) * final_attenuation;
+    }
+
+    fn background_color(&self, t: f64) -> Vec3 {
+        (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255)
+        //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8) //night
     }
 }
