@@ -12,6 +12,7 @@ debug = true
 [dependencies]
 rand = "0.7.3"
 scoped_threadpool = "0.1.9"
+oidn = "1.0.0"
 
 [dependencies.sdl2]
 version = "0.32.2"

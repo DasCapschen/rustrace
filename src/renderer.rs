@@ -17,8 +17,8 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(width: i32, height: i32, samples: u8) -> Self {
-        let pos = Vec3::new(-5.0, 2.0, -3.0);
-        let target = Vec3::new(0.0, 0.0, 3.0); //sphere center
+        let pos = Vec3::new(-7.0, 20.0, -7.0);
+        let target = Vec3::new(7.5, 5.0, 7.5); //sphere center
         let dir = target - pos;
 
         Renderer {
@@ -38,64 +38,28 @@ impl Renderer {
         self.objects.push(object);
     }
 
-    fn set_pixel(&self, buf: &mut [u8], x_in: i32, y_in: i32, color: Vec3) {
-        //it seems, although the surface reports RGB888, it is actually BGRA8888
-
-        //linear upscaling to double res
-        // |X|O|X|O|   x => actual pixel
-        // |O|O|O|O|   o => automatically set
-        // |X|O|X|O|   -> 4 pixels per pixel -> doubled res
-        // |O|O|O|O|
-
-        //skip every second pixel because upscaling
-        let x = x_in * 2;
-        let y = y_in * 2;
-
-        let x_stride = 4; //because 4 color values
-        let y_stride = (self.width * 2) * x_stride; //because every width pixel has 4 color values
-
-        const B: i32 = 0;
+    fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
+        let x_stride = 3; //because 3 color values
+        let y_stride = self.width * x_stride; //because every width pixel has 3 color values
+        
+        const R: i32 = 0;
         const G: i32 = 1;
-        const R: i32 = 2;
-        const A: i32 = 3;
+        const B: i32 = 2;
 
         let position = (x * x_stride) + (y * y_stride);
-        let position_right = ((x + 1) * x_stride) + (y * y_stride);
-        let position_below = (x * x_stride) + ((y + 1) * y_stride);
-        let position_diagonal = ((x + 1) * x_stride) + ((y + 1) * y_stride);
 
-        //actual pixel
-        buf[(B + position) as usize] = color.z.min(255.0).max(0.0) as u8;
-        buf[(G + position) as usize] = color.y.min(255.0).max(0.0) as u8;
-        buf[(R + position) as usize] = color.x.min(255.0).max(0.0) as u8;
-        buf[(A + position) as usize] = 0 as u8;
-
-        //pixel right of it
-        buf[(B + position_right) as usize] = color.z.min(255.0).max(0.0) as u8;
-        buf[(G + position_right) as usize] = color.y.min(255.0).max(0.0) as u8;
-        buf[(R + position_right) as usize] = color.x.min(255.0).max(0.0) as u8;
-        buf[(A + position_right) as usize] = 0 as u8;
-
-        //pixel below of it
-        buf[(B + position_below) as usize] = color.z.min(255.0).max(0.0) as u8;
-        buf[(G + position_below) as usize] = color.y.min(255.0).max(0.0) as u8;
-        buf[(R + position_below) as usize] = color.x.min(255.0).max(0.0) as u8;
-        buf[(A + position_below) as usize] = 0 as u8;
-
-        //pixel below and right of it
-        buf[(B + position_diagonal) as usize] = color.z.min(255.0).max(0.0) as u8;
-        buf[(G + position_diagonal) as usize] = color.y.min(255.0).max(0.0) as u8;
-        buf[(R + position_diagonal) as usize] = color.x.min(255.0).max(0.0) as u8;
-        buf[(A + position_diagonal) as usize] = 0 as u8;
+        buf[(R + position) as usize] = color.x.min(1.0).max(0.0) as f32;
+        buf[(G + position) as usize] = color.y.min(1.0).max(0.0) as f32;
+        buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
     }
 
-    pub fn draw_image(&self, buf: &mut [u8], offset: usize) {
-        // /2*width because line width (2* because upscaling), /4 because RGBA, /2 because upscaling
-        let y_max = buf.len() / (2*self.width as usize) / 4 / 2;
+    pub fn draw_image(&self, buf: &mut [f32], offset: usize) {
+        // /width because line width, /3 because RGB
+        let y_max = buf.len() / self.width as usize / 3;
 
-        let offset = offset / 4; //RGBA
-        let y_offset = (offset / (2*self.width as usize) / 2) as i32; // /2*width because line width (2* => upscaling), / 2 because upscaling
-        let x_offset = (offset % (self.width as usize)) as i32; // (x % (2*width)) / 2 => x % width
+        let offset = offset / 3; //RGB
+        let y_offset = (offset / self.width as usize) as i32; // /width because line width
+        let x_offset = (offset % (self.width as usize)) as i32;
 
         //draw image
         let mut rng = rand::thread_rng();
@@ -125,9 +89,9 @@ impl Renderer {
 
                 //scale up and gamma correct
                 const GAMMA: f64 = 1.0 / 2.2;
-                final_color.x = final_color.x.powf(GAMMA) * 255.0;
-                final_color.y = final_color.y.powf(GAMMA) * 255.0;
-                final_color.z = final_color.z.powf(GAMMA) * 255.0;
+                final_color.x = final_color.x.powf(GAMMA);
+                final_color.y = final_color.y.powf(GAMMA);
+                final_color.z = final_color.z.powf(GAMMA);
 
                 self.set_pixel(buf, x, y, final_color);
             }
