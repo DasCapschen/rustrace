@@ -41,7 +41,7 @@ impl Renderer {
     fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
         let x_stride = 3; //because 3 color values
         let y_stride = self.width * x_stride; //because every width pixel has 3 color values
-        
+
         const R: i32 = 0;
         const G: i32 = 1;
         const B: i32 = 2;
@@ -73,8 +73,8 @@ impl Renderer {
                 //multisample
                 for _s in 0..self.samples {
                     let ray = self.camera.get_ray(
-                        (x+x_offset) as f64 + rng.gen_range(0.0, 1.0),
-                        (y+y_offset) as f64 + rng.gen_range(0.0, 1.0),
+                        (x + x_offset) as f64 + rng.gen_range(0.0, 1.0),
+                        (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
                     //*really* hacky, but what gives, BVH confirmed working
@@ -116,6 +116,6 @@ impl Renderer {
 
     fn background_color(&self, t: f64) -> Vec3 {
         (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255) //day
-        //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8) //night
+                                                                            //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8) //night
     }
 }

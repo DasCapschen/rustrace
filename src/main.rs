@@ -2,7 +2,7 @@ use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
 
-use crate::hittables::primitives::{Plane, Sphere};
+use crate::hittables::primitives::{Sphere};
 use crate::material::Material;
 use crate::renderer::Renderer;
 use crate::vec3::Vec3;
@@ -58,7 +58,7 @@ fn main() {
                 renderer.add_object(Arc::new(Sphere {
                     center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
                     radius: 0.5,
-                    material: Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0)
+                    material: Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0),
                 }));
             }
         }
@@ -91,7 +91,7 @@ fn main() {
 
     //"ground"
     //BVH current does not support infinite planes!
-    
+
     renderer.add_object(Arc::new(Plane {
         center: Vec3::new(0.0, -3.0, 0.0),
         span_a: Vec3::new(0.0, 0.0, 50.0), //swap span_a and span_b to flip normal
@@ -99,7 +99,7 @@ fn main() {
         infinite: false,
         material: ground_mat,
     }));
-    
+
     /*
     renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(0.0, -103.0, 0.0),
@@ -107,7 +107,7 @@ fn main() {
         material: ground_mat,
     }));
     */
-    
+
     //albedo > 1 => emits light ;
     //let light_material = Material::new(Vec3::new(5.0, 5.0, 5.0), 0.0, 0.0, 0.0);
 
@@ -123,7 +123,9 @@ fn main() {
 
     let mut denoise_device = oidn::Device::new();
     let mut denoise_filter = oidn::filter::RayTracing::new(&mut denoise_device);
-    denoise_filter.set_srgb(true).set_img_dims(WIDTH as usize, HEIGHT as usize);
+    denoise_filter
+        .set_srgb(true)
+        .set_img_dims(WIDTH as usize, HEIGHT as usize);
 
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();
@@ -172,14 +174,14 @@ fn main() {
 
         //render the image
         let start_time = SystemTime::now();
-        
+
         //w*h, RGB
-        let mut render_buffer = vec![0f32; (WIDTH*HEIGHT*3) as usize];
+        let mut render_buffer = vec![0f32; (WIDTH * HEIGHT * 3) as usize];
         let subdiv = pool.thread_count() as usize;
         let len = render_buffer.len() / subdiv;
 
         //this is a new thread
-        pool.scoped(|s|{
+        pool.scoped(|s| {
             //here, create references to outside things
             //like a thread setup
             let r = &renderer;
@@ -187,26 +189,30 @@ fn main() {
             for i in 0..subdiv {
                 let (slice, buf) = curr_buf.split_at_mut(len);
                 curr_buf = buf;
-                
+
                 s.execute(move || {
                     //this is the actual function of the thread
-                    r.draw_image(slice, i*len);
+                    r.draw_image(slice, i * len);
                 });
             }
         });
 
-        //TODO: can we like... not have this conversion going on?
+        //denoise image
         let mut denoise_buffer = vec![0f32; render_buffer.len()];
-
-        //DENOISER EXPECTS RGB! WE HAVE BGRA
         denoise_filter.execute(&render_buffer[..], &mut denoise_buffer[..]);
 
-        //RGB => BGRA, every pixel doubled
-        let mut bgra_buffer: Vec<Vec<u8>> = denoise_buffer.chunks(3).map(|chunk| 
-            vec![(chunk[2]* 255.0) as u8, (chunk[1]* 255.0) as u8, (chunk[0]* 255.0) as u8, 0u8]
-        ).collect();
-
-        //flatten
+        //RGB => BGRA
+        let bgra_buffer: Vec<Vec<u8>> = denoise_buffer
+            .chunks(3)
+            .map(|chunk| {
+                vec![
+                    (chunk[2] * 255.0) as u8,
+                    (chunk[1] * 255.0) as u8,
+                    (chunk[0] * 255.0) as u8,
+                    0u8,
+                ]
+            })
+            .collect();
         let flat_buffer: Vec<u8> = bgra_buffer.into_iter().flatten().collect();
 
         //write pixels
@@ -219,7 +225,7 @@ fn main() {
         surface.save_bmp("/home/captncaps/denoised.bmp");
 
         //RGB => BGRA, every pixel doubled
-        let mut bgra_buffer: Vec<Vec<u8>> = render_buffer.chunks(3).map(|chunk| 
+        let mut bgra_buffer: Vec<Vec<u8>> = render_buffer.chunks(3).map(|chunk|
             vec![(chunk[2]* 255.0) as u8, (chunk[1]* 255.0) as u8, (chunk[0]* 255.0) as u8, 0u8]
         ).collect();
 
@@ -234,7 +240,6 @@ fn main() {
 
         surface.save_bmp("/home/captncaps/noisy.bmp");
         */
-        
 
         let end_time = SystemTime::now();
         println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
@@ -244,6 +249,4 @@ fn main() {
 
         break;
     }
-
-
 }

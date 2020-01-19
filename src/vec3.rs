@@ -60,7 +60,7 @@ impl Vec3 {
     pub fn reflect(&self, normal: Vec3) -> Vec3 {
         //        \   n   ↗
         //       in\  ↑  /   reflected
-        //          ↘ | /  
+        //          ↘ | /
         //   ---------+----+----
         //             \   ↑
         //      also in \  | - n * in·n

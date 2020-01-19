@@ -1,8 +1,8 @@
-use crate::vec3::Vec3;
-use std::cmp::Ordering;
 use crate::hittable::{HitResult, Hittable};
 use crate::hittables::aabb::AABB;
 use crate::ray::Ray;
+use crate::vec3::Vec3;
+
 
 use std::sync::Arc;
 
@@ -75,9 +75,12 @@ impl BvhNode {
             //sort it along some (random) axis
             let i: u32 = rand::random::<u32>() % 3;
             match i {
-                0 => sorted_list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
-                1 => sorted_list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
-                2 => sorted_list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
+                0 => sorted_list
+                    .sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
+                1 => sorted_list
+                    .sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
+                2 => sorted_list
+                    .sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
                 _ => panic!("int % 3 was not 0, 1 or 2"), //should not happen
             }
 

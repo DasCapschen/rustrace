@@ -1,4 +1,3 @@
-
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::mem::swap;
