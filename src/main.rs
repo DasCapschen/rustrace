@@ -26,8 +26,8 @@ mod hittables {
     pub mod primitives;
 }
 
-const WIDTH: u32 = 1280;
-const HEIGHT: u32 = 720;
+const WIDTH: u32 = 800;
+const HEIGHT: u32 = 600;
 
 fn main() {
     //initialise SDL2
@@ -45,7 +45,7 @@ fn main() {
     //sdl2_context.mouse().set_relative_mouse_mode(true);
 
     //create the actual raytracer
-    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 255);
+    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 4);
 
     //create a 10x10x10 cube of spheres with colorful colors
     for x in 0..10u8 {
@@ -246,7 +246,5 @@ fn main() {
 
         //"swap" images
         surface.update_window().expect("failed to update windows!");
-
-        break;
     }
 }
