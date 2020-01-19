@@ -10,6 +10,8 @@ use crate::vec3::Vec3;
 use std::sync::Arc;
 use std::time::SystemTime;
 
+use scoped_threadpool::Pool;
+
 mod camera;
 mod material;
 mod ray;
@@ -117,6 +119,8 @@ fn main() {
     }));*/
     */
 
+    let mut pool = Pool::new(40);
+
     //main loop
     let mut event_pump = sdl2_context.event_pump().unwrap();
     'running: loop {
@@ -164,18 +168,41 @@ fn main() {
 
         //render the image
         let start_time = SystemTime::now();
-        let pixels = renderer.draw_image();
-        let end_time = SystemTime::now();
-        println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
-
-        let mut surface = window.surface(&event_pump).unwrap();
+        
 
         //write pixels
+        let mut surface = window.surface(&event_pump).unwrap();
         if let Some(pixel_buffer) = surface.without_lock_mut() {
-            pixel_buffer.copy_from_slice(pixels);
+
+            let subdiv = pool.thread_count() as usize;
+            let len = pixel_buffer.len() / subdiv;
+            //this is a new thread
+            pool.scoped(|s|{
+                //here, create references to outside things
+                //like a thread setup
+                let r = &renderer;
+                let mut curr_buf = pixel_buffer;
+                for i in 0..subdiv {
+                    let (slice, buf) = curr_buf.split_at_mut(len);
+                    curr_buf = buf;
+                    
+                    s.execute(move || {
+                        //this is the actual function of the thread
+                        r.draw_image(slice, i*len);
+                    });
+                }            
+            });
+
+            //pixel_buffer.copy_from_slice(pixels);
         }
+
+
+        let end_time = SystemTime::now();
+        println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
 
         //"swap" images
         surface.update_window().expect("failed to update windows!");
     }
+
+
 }

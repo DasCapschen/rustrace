@@ -10,7 +10,8 @@ edition = "2018"
 debug = true
 
 [dependencies]
-rand = "0.7.2"
+rand = "0.7.3"
+scoped_threadpool = "0.1.9"
 
 [dependencies.sdl2]
 version = "0.32.2"

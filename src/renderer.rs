@@ -8,7 +8,6 @@ use crate::ray::Ray;
 use crate::vec3::Vec3;
 
 pub struct Renderer {
-    pixels: Vec<u8>,
     width: i32,
     height: i32,
     samples: u8,
@@ -23,7 +22,6 @@ impl Renderer {
         let dir = target - pos;
 
         Renderer {
-            pixels: vec![0; ((width * 2) * (height * 2) * 4) as usize], // * 4 because R, G, B, A!
             width,
             height,
             samples,
@@ -40,7 +38,7 @@ impl Renderer {
         self.objects.push(object);
     }
 
-    fn set_pixel(&mut self, x_in: i32, y_in: i32, color: Vec3) {
+    fn set_pixel(&self, buf: &mut [u8], x_in: i32, y_in: i32, color: Vec3) {
         //it seems, although the surface reports RGB888, it is actually BGRA8888
 
         //linear upscaling to double res
@@ -67,50 +65,52 @@ impl Renderer {
         let position_diagonal = ((x + 1) * x_stride) + ((y + 1) * y_stride);
 
         //actual pixel
-        self.pixels[(B + position) as usize] = color.z.min(255.0).max(0.0) as u8;
-        self.pixels[(G + position) as usize] = color.y.min(255.0).max(0.0) as u8;
-        self.pixels[(R + position) as usize] = color.x.min(255.0).max(0.0) as u8;
-        self.pixels[(A + position) as usize] = 0 as u8;
+        buf[(B + position) as usize] = color.z.min(255.0).max(0.0) as u8;
+        buf[(G + position) as usize] = color.y.min(255.0).max(0.0) as u8;
+        buf[(R + position) as usize] = color.x.min(255.0).max(0.0) as u8;
+        buf[(A + position) as usize] = 0 as u8;
 
         //pixel right of it
-        self.pixels[(B + position_right) as usize] = color.z.min(255.0).max(0.0) as u8;
-        self.pixels[(G + position_right) as usize] = color.y.min(255.0).max(0.0) as u8;
-        self.pixels[(R + position_right) as usize] = color.x.min(255.0).max(0.0) as u8;
-        self.pixels[(A + position_right) as usize] = 0 as u8;
+        buf[(B + position_right) as usize] = color.z.min(255.0).max(0.0) as u8;
+        buf[(G + position_right) as usize] = color.y.min(255.0).max(0.0) as u8;
+        buf[(R + position_right) as usize] = color.x.min(255.0).max(0.0) as u8;
+        buf[(A + position_right) as usize] = 0 as u8;
 
         //pixel below of it
-        self.pixels[(B + position_below) as usize] = color.z.min(255.0).max(0.0) as u8;
-        self.pixels[(G + position_below) as usize] = color.y.min(255.0).max(0.0) as u8;
-        self.pixels[(R + position_below) as usize] = color.x.min(255.0).max(0.0) as u8;
-        self.pixels[(A + position_below) as usize] = 0 as u8;
+        buf[(B + position_below) as usize] = color.z.min(255.0).max(0.0) as u8;
+        buf[(G + position_below) as usize] = color.y.min(255.0).max(0.0) as u8;
+        buf[(R + position_below) as usize] = color.x.min(255.0).max(0.0) as u8;
+        buf[(A + position_below) as usize] = 0 as u8;
 
         //pixel below and right of it
-        self.pixels[(B + position_diagonal) as usize] = color.z.min(255.0).max(0.0) as u8;
-        self.pixels[(G + position_diagonal) as usize] = color.y.min(255.0).max(0.0) as u8;
-        self.pixels[(R + position_diagonal) as usize] = color.x.min(255.0).max(0.0) as u8;
-        self.pixels[(A + position_diagonal) as usize] = 0 as u8;
+        buf[(B + position_diagonal) as usize] = color.z.min(255.0).max(0.0) as u8;
+        buf[(G + position_diagonal) as usize] = color.y.min(255.0).max(0.0) as u8;
+        buf[(R + position_diagonal) as usize] = color.x.min(255.0).max(0.0) as u8;
+        buf[(A + position_diagonal) as usize] = 0 as u8;
     }
 
-    //TODO: Multithreading!
-    //hint: rwlock for vecs etc.
-    //also, move the Canvas OUT of the renderer!
-    //return a [u8] of all pixels or something and set them to canvas elsewhere
-    //FIXME: threading is just as fast, or even slower
-    pub fn draw_image(&mut self) -> &[u8] {
+    pub fn draw_image(&self, buf: &mut [u8], offset: usize) {
+        // /2*width because line width (2* because upscaling), /4 because RGBA, /2 because upscaling
+        let y_max = buf.len() / (2*self.width as usize) / 4 / 2;
+
+        let offset = offset / 4; //RGBA
+        let y_offset = (offset / (2*self.width as usize) / 2) as i32; // /2*width because line width (2* => upscaling), / 2 because upscaling
+        let x_offset = (offset % (self.width as usize)) as i32; // (x % (2*width)) / 2 => x % width
+
         //draw image
         let mut rng = rand::thread_rng();
 
         let bvh = BvhNode::from_hittables(&self.objects[..]).unwrap();
 
         for x in 0..self.width {
-            for y in 0..self.height {
+            for y in 0..y_max as i32 {
                 let mut final_color = Vec3::rgb(0, 0, 0);
 
                 //multisample
                 for _s in 0..self.samples {
                     let ray = self.camera.get_ray(
-                        x as f64 + rng.gen_range(0.0, 1.0),
-                        y as f64 + rng.gen_range(0.0, 1.0),
+                        (x+x_offset) as f64 + rng.gen_range(0.0, 1.0),
+                        (y+y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
                     //*really* hacky, but what gives, BVH confirmed working
@@ -129,11 +129,9 @@ impl Renderer {
                 final_color.y = final_color.y.powf(GAMMA) * 255.0;
                 final_color.z = final_color.z.powf(GAMMA) * 255.0;
 
-                self.set_pixel(x, y, final_color);
+                self.set_pixel(buf, x, y, final_color);
             }
         }
-
-        &self.pixels[..]
     }
 
     fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
