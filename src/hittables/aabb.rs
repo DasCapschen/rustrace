@@ -1,5 +1,4 @@
-use crate::hittable::HitResult;
-use crate::hittable::Hittable;
+use crate::hit::{Hit, HitResult};
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::mem::swap;
@@ -39,7 +38,7 @@ impl AABB {
     }
 }
 
-impl Hittable for AABB {
+impl Hit for AABB {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         //calculate intersection on YZ-plane
         let mut t0_x = (self.start.x - ray.origin.x) / ray.direction.x;
@@ -90,7 +89,7 @@ impl Hittable for AABB {
             return None;
         }
 
-        Some(HitResult{
+        Some(HitResult {
             ray_param: t_max,
             hit_position: ray.origin + t_max * ray.origin,
             normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?

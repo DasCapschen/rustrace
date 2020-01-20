@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use std::clone::Clone;
 use std::fmt::Debug;
+use std::sync::Arc;
 
-use crate::hittable::{HitResult, Hittable};
+use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -52,7 +52,6 @@ struct Triangle {
 
 */
 
-
 #[derive(Debug, Clone)]
 pub struct Sphere {
     pub center: Vec3,
@@ -60,7 +59,7 @@ pub struct Sphere {
     pub material: Arc<Material>,
 }
 
-impl Hittable for Sphere {
+impl Hit for Sphere {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         // x² + y² + z² = radius  | sphere at 0,0,0
         // (x-c_x)² + (y-c_y)² + (z-c_z)² = radius | sphere at c
@@ -134,7 +133,7 @@ pub struct Plane {
     pub material: Arc<Material>,
 }
 
-impl Hittable for Plane {
+impl Hit for Plane {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         // (x - center) · normal = 0
         // x => ray  x(t) = origin + t * direction
@@ -218,7 +217,7 @@ pub struct Triangle {
     pub material: Arc<Material>,
 }
 
-impl Hittable for Triangle {
+impl Hit for Triangle {
     fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
         None
     }

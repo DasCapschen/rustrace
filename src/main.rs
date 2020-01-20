@@ -18,7 +18,7 @@ mod ray;
 mod renderer;
 mod vec3;
 
-mod hittable;
+mod hit;
 mod hittables {
     pub mod aabb;
     pub mod bvh;

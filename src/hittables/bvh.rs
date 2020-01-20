@@ -1,4 +1,4 @@
-use crate::hittable::{HitResult, Hittable};
+use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -13,7 +13,7 @@ struct Tree {
     nodes: Vec<Node>,
 }
 struct Node {
-    hittable: Arc<dyn Hittable>,
+    hittable: Arc<dyn Hit>,
     left: Option<usize>,
     right: Option<usize>
 }
@@ -22,14 +22,14 @@ struct Node {
 #[derive(Debug, Clone)]
 pub struct BvhNode {
     bb: AABB,
-    hittable: Option<Arc<dyn Hittable>>,
+    hittable: Option<Arc<dyn Hit>>,
     left: Option<Box<BvhNode>>,
     right: Option<Box<BvhNode>>,
 }
 
 impl BvhNode {
     // this is recursive!
-    pub fn from_hittables(list: &[Arc<dyn Hittable>]) -> Option<BvhNode> {
+    pub fn from_hittables(list: &[Arc<dyn Hit>]) -> Option<BvhNode> {
         //if empty list, return nothing
         if list.is_empty() {
             return None;
@@ -56,7 +56,7 @@ impl BvhNode {
                     .sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
                 2 => sorted_list
                     .sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
-                _ => unreachable!()
+                _ => unreachable!(),
             }
 
             //split it along that axis into 2
@@ -79,7 +79,7 @@ impl BvhNode {
     }
 }
 
-impl Hittable for BvhNode {
+impl Hit for BvhNode {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         //only proceed if the bounding box was hit
         if let Some(hr) = self.bb.hit(ray, t_min, t_max) {
@@ -104,12 +104,15 @@ impl Hittable for BvhNode {
 
             match (left_hit, right_hit) {
                 (Some(lh), Some(rh)) => {
-                    if lh.ray_param < rh.ray_param { return Some(lh) }
-                    else { return Some(rh) }
-                },
+                    if lh.ray_param < rh.ray_param {
+                        return Some(lh);
+                    } else {
+                        return Some(rh);
+                    }
+                }
                 (Some(lh), None) => return Some(lh),
                 (None, Some(rh)) => return Some(rh),
-                (None, None) => return None
+                (None, None) => return None,
             }
         }
         None

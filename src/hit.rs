@@ -14,34 +14,15 @@ pub struct HitResult {
     pub material: Option<Arc<Material>>,
 }
 
-pub trait Hittable: Debug + Send + Sync {
+pub trait Hit: Debug + Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
     fn bounding_box(&self) -> Option<AABB>;
     fn center(&self) -> Vec3;
 }
 
-/* make hittable cloneable
-trait HittableClone {
-    fn box_clone(&self) -> Box<dyn Hittable>;
-}
-
-impl<T> HittableClone for T
-    where T: Hittable + 'static + Clone {
-        fn box_clone(&self) -> Box<dyn Hittable> {
-            Box::new(self.clone())
-        }
-}
-
-impl Clone for Box<dyn Hittable> {
-    fn clone(&self) -> Self {
-        self.box_clone()
-    }
-}
-*/
-
 // hit a list of any hittables
 // useful for hitting world (all objects) in renderer
-impl Hittable for Vec<Arc<dyn Hittable>> {
+impl Hit for Vec<Arc<dyn Hit>> {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;
@@ -94,7 +75,7 @@ impl Hittable for Vec<Arc<dyn Hittable>> {
     }
 }
 
-impl Hittable for [Arc<dyn Hittable>] {
+impl Hit for [Arc<dyn Hit>] {
     fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
         None
     }
@@ -126,9 +107,9 @@ impl Hittable for [Arc<dyn Hittable>] {
 
 //hit a list of specific hittable
 //useful for hitting triangles of a mesh
-impl<T> Hittable for Vec<T>
+impl<T> Hit for Vec<T>
 where
-    T: Hittable,
+    T: Hit,
 {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         let mut closest = t_max;

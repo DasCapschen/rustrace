@@ -2,7 +2,7 @@ use rand::Rng;
 use std::sync::Arc;
 
 use crate::camera::Camera;
-use crate::hittable::Hittable;
+use crate::hit::Hit;
 use crate::hittables::bvh::BvhNode;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -13,7 +13,7 @@ pub struct Renderer {
     height: i32,
     samples: u8,
     pub camera: Camera,
-    objects: Vec<Arc<dyn Hittable>>,
+    objects: Vec<Arc<dyn Hit>>,
 }
 
 impl Renderer {
@@ -35,7 +35,7 @@ impl Renderer {
         }
     }
 
-    pub fn add_object(&mut self, object: Arc<dyn Hittable>) {
+    pub fn add_object(&mut self, object: Arc<dyn Hit>) {
         self.objects.push(object);
     }
 
@@ -99,7 +99,7 @@ impl Renderer {
         }
     }
 
-    fn trace_color(&self, ray: &Ray, object: &dyn Hittable) -> Vec3 {
+    fn trace_color(&self, ray: &Ray, object: &dyn Hit) -> Vec3 {
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {

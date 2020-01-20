@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::hittable::{HitResult, Hittable};
+use crate::hit::{HitResult, Hit};
 use crate::hittables::aabb::AABB;
 use crate::hittables::primitives::Triangle;
 use crate::ray::Ray;
@@ -27,8 +27,8 @@ impl Mesh {
     }
 }
 
-//Vec<hittable> implements hittable!
-impl Hittable for Mesh {
+//Vec<Hit> implements hittable!
+impl Hit for Mesh {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         //instead of offsetting every face by mesh's position
         //we offset the ray in the opposite direction
