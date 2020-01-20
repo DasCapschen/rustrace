@@ -14,7 +14,7 @@ pub struct HitResult {
     pub material: Material,
 }
 
-pub trait Hittable: Send + Sync {
+pub trait Hittable: Debug + Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
     fn bounding_box(&self) -> Option<AABB>;
     fn center(&self) -> Vec3;

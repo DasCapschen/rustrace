@@ -3,9 +3,25 @@ use crate::hittables::aabb::AABB;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-
 use std::sync::Arc;
 
+/*
+I feel like this whole class needs a refactoring. I mean it works, but I don't like it.
+We should try to be idiomatic and do it like
+
+struct Tree {
+    nodes: Vec<Node>,
+}
+struct Node {
+    data: T,
+    left: Option<usize>,
+    right: Option<usize>
+}
+
+Also AABB should probably be a hittable
+*/
+
+#[derive(Debug, Clone)]
 pub struct BvhNode {
     bb: AABB,
     hittable: Option<Arc<dyn Hittable>>,
@@ -14,45 +30,6 @@ pub struct BvhNode {
 }
 
 impl BvhNode {
-    /* hack af
-    pub fn debug_hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Vec3 {
-        if let Some(l) = &self.left {
-            if l.bb.hit(ray, t_min, t_max) {
-
-                if let Some(left) = &l.left {
-                    if let Some(nl) = &left.left {
-                        if nl.bb.hit(ray, t_min, t_max) {
-                            return Vec3::rgb(0, 0, 255);
-                        }
-                    }
-                    if let Some(nr) = &left.right {
-                        if nr.bb.hit(ray, t_min, t_max) {
-                            return Vec3::rgb(255, 0, 255);
-                        }
-                    }
-                }
-                if let Some(right) = &l.right {
-                    if right.bb.hit(ray, t_min, t_max) {
-                        return Vec3::rgb(255, 0, 0);
-                    }
-                }
-            }
-        }
-
-        if let Some(r) = &self.right {
-            if r.bb.hit(ray, t_min, t_max) {
-                return Vec3::rgb(0, 255, 0);
-            }
-        }
-
-        if self.bb.hit(ray, t_min, t_max) {
-            return Vec3::rgb(255, 255, 255);
-        }
-
-        return Vec3::rgb(0, 0, 0);
-    }
-    */
-
     // this is recursive!
     pub fn from_hittables(list: &[Arc<dyn Hittable>]) -> Option<BvhNode> {
         //if empty list, return nothing

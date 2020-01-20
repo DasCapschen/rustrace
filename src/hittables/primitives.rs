@@ -69,6 +69,7 @@ impl Hittable for Sphere {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Plane {
     // +---------+
     // |    ↑    |
@@ -157,6 +158,7 @@ impl Hittable for Plane {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Triangle {
     // +
     // ↑ \

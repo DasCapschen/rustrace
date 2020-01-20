@@ -7,6 +7,7 @@ use crate::hittables::bvh::BvhNode;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
+#[derive(Debug, Clone)]
 pub struct Renderer {
     width: i32,
     height: i32,

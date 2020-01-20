@@ -2,7 +2,7 @@ use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
 
-use crate::hittables::primitives::{Sphere};
+use crate::hittables::primitives::Sphere;
 use crate::material::Material;
 use crate::renderer::Renderer;
 use crate::vec3::Vec3;
@@ -63,61 +63,6 @@ fn main() {
             }
         }
     }
-
-    //create some materials
-    /*let ground_mat = Material::new(Vec3::rgb(100, 200, 30), 0.0, 1.0, 0.0);
-    let diffuse_sphere_mat = Material::new(Vec3::rgb(200, 75, 75), 0.0, 1.0, 0.0);
-    let sphere1_mat = Material::new(Vec3::rgb(200, 150, 50), 1.0, 0.75, 0.0);
-    let sphere2_mat = Material::new(Vec3::rgb(200, 200, 200), 1.0, 0.0, 1.5);
-
-    //diffuse sphere
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(0.0, 0.0, 3.0),
-        radius: 1.0,
-        material: diffuse_sphere_mat,
-    }));
-
-    //2 metal reflector spheres
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(-2.0, 0.0, 3.0),
-        radius: 1.0,
-        material: sphere1_mat,
-    }));
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(2.0, 0.0, 3.0),
-        radius: 1.0,
-        material: sphere2_mat,
-    }));
-
-    //"ground"
-    //BVH current does not support infinite planes!
-
-    renderer.add_object(Arc::new(Plane {
-        center: Vec3::new(0.0, -3.0, 0.0),
-        span_a: Vec3::new(0.0, 0.0, 50.0), //swap span_a and span_b to flip normal
-        span_b: Vec3::new(50.0, 0.0, 0.0),
-        infinite: false,
-        material: ground_mat,
-    }));
-
-    /*
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(0.0, -103.0, 0.0),
-        radius: 100.0,
-        material: ground_mat,
-    }));
-    */
-
-    //albedo > 1 => emits light ;
-    //let light_material = Material::new(Vec3::new(5.0, 5.0, 5.0), 0.0, 0.0, 0.0);
-
-    //create a light
-    /*renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(200.0, 500.0, -1000.0),
-        radius: 750.0,
-        material: light_material,
-    }));*/
-    */
 
     let mut pool = Pool::new(40);
 
@@ -220,26 +165,6 @@ fn main() {
         if let Some(pixel_buffer) = surface.without_lock_mut() {
             pixel_buffer.copy_from_slice(&flat_buffer[..]);
         }
-
-        /*
-        surface.save_bmp("/home/captncaps/denoised.bmp");
-
-        //RGB => BGRA, every pixel doubled
-        let mut bgra_buffer: Vec<Vec<u8>> = render_buffer.chunks(3).map(|chunk|
-            vec![(chunk[2]* 255.0) as u8, (chunk[1]* 255.0) as u8, (chunk[0]* 255.0) as u8, 0u8]
-        ).collect();
-
-        //flatten
-        let flat_buffer: Vec<u8> = bgra_buffer.into_iter().flatten().collect();
-
-        //write pixels
-        let mut surface = window.surface(&event_pump).unwrap();
-        if let Some(pixel_buffer) = surface.without_lock_mut() {
-            pixel_buffer.copy_from_slice(&flat_buffer[..]);
-        }
-
-        surface.save_bmp("/home/captncaps/noisy.bmp");
-        */
 
         let end_time = SystemTime::now();
         println!("DRAW! ({:?})", end_time.duration_since(start_time).unwrap());
