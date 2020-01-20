@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::clone::Clone;
 use std::fmt::Debug;
 
@@ -7,11 +8,56 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Copy, Clone)]
+/*
+TODO: refactor this to something like...
+
+struct Object {
+    position: Vec3,
+    material: Arc<Material>,
+
+    shape: Shape
+}
+
+impl Hittalbe for Object {
+    fn hit(...) {
+        ray.origin - center; //move ray because shape has no position
+        match self.shape {
+            Sphere(s) => s.hit(...),
+            ...
+        }
+    }
+    ...
+}
+
+enum Shape {
+    Sphere(Sphere),
+    Plane(Plane),
+    Triangle(Triangle),
+}
+
+struct Sphere{
+    radius: f64
+}
+
+struct Plane {
+    span_a: Vec3,
+    span_b: Vec3,
+    infinite: bool,
+}
+
+struct Triangle {
+    span_a: Vec3,
+    span_b: Vec3,
+}
+
+*/
+
+
+#[derive(Debug, Clone)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
-    pub material: Material,
+    pub material: Arc<Material>,
 }
 
 impl Hittable for Sphere {
@@ -52,7 +98,7 @@ impl Hittable for Sphere {
                 ray_param: t,
                 hit_position: p,
                 normal: n,
-                material: self.material.clone(),
+                material: Some(self.material.clone()),
             })
         }
     }
@@ -69,7 +115,7 @@ impl Hittable for Sphere {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Plane {
     // +---------+
     // |    ↑    |
@@ -85,7 +131,7 @@ pub struct Plane {
     pub span_a: Vec3,
     pub span_b: Vec3,
     pub infinite: bool,
-    pub material: Material,
+    pub material: Arc<Material>,
 }
 
 impl Hittable for Plane {
@@ -112,7 +158,7 @@ impl Hittable for Plane {
             ray_param: parameter,
             hit_position: hit_position,
             normal: normal,
-            material: self.material,
+            material: Some(self.material.clone()),
         };
 
         //if not infinite plane, check if in bounds
@@ -158,7 +204,7 @@ impl Hittable for Plane {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Triangle {
     // +
     // ↑ \
@@ -169,7 +215,7 @@ pub struct Triangle {
     pub center: Vec3,
     pub span_a: Vec3,
     pub span_b: Vec3,
-    pub material: Material,
+    pub material: Arc<Material>,
 }
 
 impl Hittable for Triangle {

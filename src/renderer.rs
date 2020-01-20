@@ -103,12 +103,15 @@ impl Renderer {
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
-            if let Some((attenuation, scattered_ray)) = hit.material.scatter(&ray_to_use, &hit) {
-                ray_to_use = scattered_ray;
-                final_attenuation = final_attenuation * attenuation;
-            } else {
-                return Vec3::new(0.0, 0.0, 0.0);
+            if let Some(mat) = &hit.material {
+                if let Some((attenuation, scattered_ray)) = mat.scatter(&ray_to_use, &hit) {
+                    ray_to_use = scattered_ray;
+                    final_attenuation = final_attenuation * attenuation;
+                    continue;
+                }
             }
+            //else
+            return Vec3::new(0.0, 0.0, 0.0);
         }
 
         let t = 0.5 * (ray.direction.normalised().y + 1.0);
@@ -117,6 +120,6 @@ impl Renderer {
 
     fn background_color(&self, t: f64) -> Vec3 {
         (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255) //day
-                                                                            //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8) //night
+        //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8)           //night
     }
 }

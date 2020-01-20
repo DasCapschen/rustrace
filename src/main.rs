@@ -45,7 +45,7 @@ fn main() {
     //sdl2_context.mouse().set_relative_mouse_mode(true);
 
     //create the actual raytracer
-    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 4);
+    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 10);
 
     //create a 10x10x10 cube of spheres with colorful colors
     for x in 0..10u8 {
@@ -58,7 +58,7 @@ fn main() {
                 renderer.add_object(Arc::new(Sphere {
                     center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
                     radius: 0.5,
-                    material: Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0),
+                    material: Arc::new(Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0)),
                 }));
             }
         }

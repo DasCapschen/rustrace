@@ -13,12 +13,10 @@ struct Tree {
     nodes: Vec<Node>,
 }
 struct Node {
-    data: T,
+    hittable: Arc<dyn Hittable>,
     left: Option<usize>,
     right: Option<usize>
 }
-
-Also AABB should probably be a hittable
 */
 
 #[derive(Debug, Clone)]
@@ -58,7 +56,7 @@ impl BvhNode {
                     .sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
                 2 => sorted_list
                     .sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
-                _ => panic!("int % 3 was not 0, 1 or 2"), //should not happen
+                _ => unreachable!()
             }
 
             //split it along that axis into 2
@@ -84,7 +82,11 @@ impl BvhNode {
 impl Hittable for BvhNode {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         //only proceed if the bounding box was hit
-        if self.bb.hit(ray, t_min, t_max) {
+        if let Some(hr) = self.bb.hit(ray, t_min, t_max) {
+            //limit t_max, we cannot hit anything *behind* the current hit!
+            //aabb returns the *backside* of it, *not* the front
+            let t_max = hr.ray_param;
+
             //if we are a hittable (-> leaf), trace it!
             if let Some(h) = &self.hittable {
                 return h.hit(ray, t_min, t_max);
@@ -100,17 +102,14 @@ impl Hittable for BvhNode {
                 None => None,
             };
 
-            if let Some(hit1) = left_hit {
-                if let Some(hit2) = right_hit {
-                    if hit1.ray_param > hit2.ray_param {
-                        return Some(hit2);
-                    }
-                }
-                return Some(hit1);
-            } else if let Some(hit2) = right_hit {
-                return Some(hit2);
-            } else {
-                return None;
+            match (left_hit, right_hit) {
+                (Some(lh), Some(rh)) => {
+                    if lh.ray_param < rh.ray_param { return Some(lh) }
+                    else { return Some(rh) }
+                },
+                (Some(lh), None) => return Some(lh),
+                (None, Some(rh)) => return Some(rh),
+                (None, None) => return None
             }
         }
         None

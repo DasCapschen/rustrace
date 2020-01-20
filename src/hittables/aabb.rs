@@ -1,3 +1,5 @@
+use crate::hittable::HitResult;
+use crate::hittable::Hittable;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::mem::swap;
@@ -35,11 +37,14 @@ impl AABB {
             ),
         }
     }
+}
 
-    pub fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> bool {
+impl Hittable for AABB {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
         //calculate intersection on YZ-plane
         let mut t0_x = (self.start.x - ray.origin.x) / ray.direction.x;
         let mut t1_x = (self.end.x - ray.origin.x) / ray.direction.x;
+
         //if direction is negative, gotta swap because t1 is supposed to be the bigger one
         if ray.direction.x < 0.0 {
             swap(&mut t0_x, &mut t1_x);
@@ -48,6 +53,7 @@ impl AABB {
         //calculate intersection on XZ-plane
         let mut t0_y = (self.start.y - ray.origin.y) / ray.direction.y;
         let mut t1_y = (self.end.y - ray.origin.y) / ray.direction.y;
+
         //if direction is negative, gotta swap because t1 is supposed to be the bigger one
         if ray.direction.y < 0.0 {
             swap(&mut t0_y, &mut t1_y);
@@ -56,6 +62,7 @@ impl AABB {
         //calculate intersection on XY-plane
         let mut t0_z = (self.start.z - ray.origin.z) / ray.direction.z;
         let mut t1_z = (self.end.z - ray.origin.z) / ray.direction.z;
+
         //if direction is negative, gotta swap because t1 is supposed to be the bigger one
         if ray.direction.z < 0.0 {
             swap(&mut t0_z, &mut t1_z);
@@ -73,16 +80,29 @@ impl AABB {
 
         //check if y-hit overlaps x-hit
         if t_max < t_min {
-            return false;
+            return None;
         }
 
         //limit hit interval to xyz-hit and check if it overlaps xy-hit
         let t_min = if t0_z > t_min { t0_z } else { t_min };
         let t_max = if t1_z < t_max { t1_z } else { t_max };
         if t_max < t_min {
-            return false;
+            return None;
         }
 
-        true
+        Some(HitResult{
+            ray_param: t_max,
+            hit_position: ray.origin + t_max * ray.origin,
+            normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?
+            material: None,
+        })
+    }
+
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(*self)
+    }
+
+    fn center(&self) -> Vec3 {
+        self.start + 0.5 * (self.end - self.start)
     }
 }

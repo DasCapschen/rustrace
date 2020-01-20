@@ -6,12 +6,12 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct HitResult {
     pub ray_param: f64,
     pub hit_position: Vec3,
     pub normal: Vec3,
-    pub material: Material,
+    pub material: Option<Arc<Material>>,
 }
 
 pub trait Hittable: Debug + Send + Sync {
