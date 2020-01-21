@@ -1,3 +1,5 @@
+use crate::texture::Texture;
+use std::sync::Arc;
 use rand::Rng;
 use std::fmt::Debug;
 
@@ -5,60 +7,82 @@ use crate::hit::HitResult;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Copy, Clone)]
+//TODO: Normal Maps
+
+#[derive(Clone)]
 pub struct Material {
-    albedo: Vec3,
+    albedo: Arc<dyn Texture>,
+    metallic: Metallic,
+    refraction: Option<f64>,
+}
 
-    metallic: f64,
-    roughness: f64,
+#[derive(Clone)]
+pub enum Metallic {
+    Metal(MetalParameters),
+    NonMetal
+}
 
-    refraction: f64,
+#[derive(Clone)]
+pub struct MetalParameters {
+    pub metallic: Arc<dyn Texture>,
+    pub roughness: Arc<dyn Texture>,
 }
 
 impl Material {
-    pub fn new(albedo: Vec3, metal: f64, roughness: f64, refraction: f64) -> Self {
+    pub fn new(albedo: Arc<dyn Texture>, metallic: Metallic, refraction: Option<f64>) -> Self {
         Material {
             albedo,
-            metallic: metal.max(0.0).min(1.0),
-            roughness: roughness.max(0.0).min(1.0), //clamp() is unstable...
-            refraction,                             //refraction index
+            metallic,
+            refraction,
         }
     }
 
     /// Returns Option<Tuple (Attenuation, Scattered Ray)>
     pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Ray)> {
+        let uv_coords = hit.uv_coords.unwrap();
+
         //lambertian path
         let target = hit.hit_position + hit.normal + Vec3::random_in_unit_sphere();
         let mut direction = target - hit.hit_position;
+        let albedo = self.albedo.texture(uv_coords);
+
+        use Metallic::Metal;
 
         //metallic path
-        if self.metallic > 0.0 {
+        if let Metal(metal_params) = &self.metallic {
+            //.x => red channel ; this texture should be grayscale !
+            //idea: combine 3 gray textures into 1 with r, g, b channels?
+            let roughness = metal_params.roughness.texture(uv_coords).x;
+
             let reflected = ray.direction.normalised().reflect(hit.normal)
-                + self.roughness * Vec3::random_in_unit_sphere();
+                + roughness * Vec3::random_in_unit_sphere();
 
             //if, for some reason, we reflect *into* the object, absorb the ray
             //tutorial says this is correct, but leads to black spots around the edge of the sphere :/
             if reflected.dot(hit.normal) < 0.0 {
                 return None;
             }
-            direction = Vec3::lerp(direction, reflected, self.metallic);
+
+            //.x => red channel ; this texture should be grayscale !
+            let metallic = metal_params.metallic.texture(uv_coords).x;
+            direction = Vec3::lerp(direction, reflected, metallic);
         }
 
         //refraction path
-        if self.refraction > 0.0 {
+        if let Some(refraction_index) = self.refraction {
             let (normal, n_in, n_out, cosine);
             if ray.direction.dot(hit.normal) > 0.0 {
                 //object -> air
                 normal = -hit.normal; //outward normal
-                n_in = self.refraction; //object
+                n_in = refraction_index; //object
                 n_out = 1.0; //air
-                cosine = self.refraction * ray.direction.normalised().dot(hit.normal);
+                cosine = refraction_index * ray.direction.normalised().dot(hit.normal);
             // why refraction * v·n ?
             } else {
                 //air -> object
                 normal = hit.normal;
                 n_in = 1.0;
-                n_out = self.refraction;
+                n_out = refraction_index;
                 cosine = -ray.direction.normalised().dot(hit.normal); // why negative?
             }
 
@@ -74,11 +98,15 @@ impl Material {
         //else, scatter it
         let scattered = Ray::new(hit.hit_position, direction);
 
-        Some((self.albedo, scattered))
+        //return final
+        Some((albedo, scattered))
     }
 
     fn schlick(&self, cosine: f64) -> f64 {
-        let mut r0 = (1.0 - self.refraction) / (1.0 + self.refraction);
+        //safe, we don't call this function if we have no refraction
+        let refraction = self.refraction.unwrap();
+
+        let mut r0 = (1.0 - refraction) / (1.0 + refraction);
         r0 = r0 * r0;
         r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }

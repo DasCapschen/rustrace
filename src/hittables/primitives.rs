@@ -18,7 +18,7 @@ struct Object {
     shape: Shape
 }
 
-impl Hittalbe for Object {
+impl Hit for Object {
     fn hit(...) {
         ray.origin - center; //move ray because shape has no position
         match self.shape {
@@ -52,7 +52,7 @@ struct Triangle {
 
 */
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
@@ -76,7 +76,7 @@ impl Hit for Sphere {
 
         //cannot take sqrt of negative, no hit
         if root < 0.0 {
-            return None;
+            None
         } else {
             let mut t = (-b + root.sqrt()) / (a);
 
@@ -90,14 +90,22 @@ impl Hit for Sphere {
                 return None;
             }
 
-            let p = ray.point_at(t);
-            let n = (p - self.center).normalised();
+            let hit_position = ray.point_at(t);
+            let normal = (hit_position - self.center).normalised();
+
+            //code from tutorial says: 1 - (x.atan2(z) + pi) / (2*pi)
+            //but exchanging x and z also flips it, so 1- is not necessary
+            let u = (normal.z.atan2(normal.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI);
+
+            //negative because our y axis (image) is flipped
+            let v = ((-normal.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
 
             Some(HitResult {
                 ray_param: t,
-                hit_position: p,
-                normal: n,
+                hit_position,
+                normal,
                 material: Some(self.material.clone()),
+                uv_coords: Some((u,v)),
             })
         }
     }
@@ -114,7 +122,7 @@ impl Hit for Sphere {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Plane {
     // +---------+
     // |    ↑    |
@@ -153,11 +161,14 @@ impl Hit for Plane {
 
         let hit_position = ray.origin + parameter * ray.direction;
 
+        //TODO: calculate UV coordinates
+
         let result = HitResult {
             ray_param: parameter,
-            hit_position: hit_position,
-            normal: normal,
+            hit_position,
+            normal,
             material: Some(self.material.clone()),
+            uv_coords: None,
         };
 
         //if not infinite plane, check if in bounds
@@ -203,7 +214,7 @@ impl Hit for Plane {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Triangle {
     // +
     // ↑ \

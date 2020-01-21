@@ -7,7 +7,7 @@ use crate::hittables::bvh::BvhNode;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Renderer {
     width: i32,
     height: i32,
@@ -78,9 +78,6 @@ impl Renderer {
                         (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
-                    //*really* hacky, but what gives, BVH confirmed working
-                    //final_color = bvh.debug_hit(&ray, 0.0001, std::f64::MAX);
-
                     //bvh slows us down in small example scenes!
                     final_color = final_color + self.trace_color(&ray, &bvh);
                 }
@@ -115,11 +112,11 @@ impl Renderer {
         }
 
         let t = 0.5 * (ray.direction.normalised().y + 1.0);
-        return self.background_color(t) * final_attenuation;
+        self.background_color(t) * final_attenuation
     }
 
     fn background_color(&self, t: f64) -> Vec3 {
-        (1.0 - t) * Vec3::rgb(255, 255, 255) + t * Vec3::rgb(128, 179, 255) //day
+        (1.0-t) * Vec3::rgb(64, 64, 255) + (t) * Vec3::rgb(255, 255, 255) //day
         //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8)           //night
     }
 }

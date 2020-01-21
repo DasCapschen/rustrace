@@ -6,15 +6,16 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HitResult {
     pub ray_param: f64,
     pub hit_position: Vec3,
     pub normal: Vec3,
     pub material: Option<Arc<Material>>,
+    pub uv_coords: Option<(f64, f64)>,
 }
 
-pub trait Hit: Debug + Send + Sync {
+pub trait Hit: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
     fn bounding_box(&self) -> Option<AABB>;
     fn center(&self) -> Vec3;
@@ -63,10 +64,10 @@ impl Hit for Vec<Arc<dyn Hit>> {
             }
 
             //return bb containing all bbs.
-            return Some(bb);
+            Some(bb)
         } else {
             //if first object has no bb, no bb at all!
-            return None;
+            None
         }
     }
 
@@ -151,10 +152,10 @@ where
             }
 
             //return bb containing all bbs.
-            return Some(bb);
+            Some(bb)
         } else {
             //if first object has no bb, no bb at all!
-            return None;
+            None
         }
     }
 

@@ -6,7 +6,7 @@ use crate::hittables::primitives::Triangle;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Mesh {
     position: Vec3,
     faces: Vec<Triangle>,

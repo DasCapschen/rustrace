@@ -8,6 +8,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Run 'raytrace' optimised",
+            "env": {
+                "OIDN_DIR": "/usr",
+            },
             "cargo": {
                 "args": [
                     "build",
@@ -27,6 +30,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug executable 'raytrace'",
+            "env": {
+                "OIDN_DIR": "/usr",
+            },
             "cargo": {
                 "args": [
                     "build",
@@ -45,6 +51,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug unit tests in executable 'raytrace'",
+            "env": {
+                "OIDN_DIR": "/usr",
+            },
             "cargo": {
                 "args": [
                     "test",

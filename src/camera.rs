@@ -38,13 +38,13 @@ impl Camera {
     }
 
     pub fn right(&self) -> Vec3 {
-        const global_up: Vec3 = Vec3 {
+        const GLOBAL_UP: Vec3 = Vec3 {
             x: 0.0,
             y: 1.0,
             z: 0.0,
         };
 
-        global_up.cross(self.forward()).normalised()
+        GLOBAL_UP.cross(self.forward()).normalised()
     }
 
     pub fn up(&self) -> Vec3 {

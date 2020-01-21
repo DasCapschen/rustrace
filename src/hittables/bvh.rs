@@ -19,7 +19,7 @@ struct Node {
 }
 */
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct BvhNode {
     bb: AABB,
     hittable: Option<Arc<dyn Hit>>,
@@ -32,16 +32,16 @@ impl BvhNode {
     pub fn from_hittables(list: &[Arc<dyn Hit>]) -> Option<BvhNode> {
         //if empty list, return nothing
         if list.is_empty() {
-            return None;
+            None
         }
         //if list is 1 element
         else if list.len() == 1 {
-            return Some(BvhNode {
+            Some(BvhNode {
                 bb: list[0].bounding_box().unwrap(),
                 hittable: Some(list[0].clone()),
                 left: None,
                 right: None,
-            });
+            })
         } else {
             //clone the slice we got so we can sort it!
             //IDEA: pass a mutable slice?
@@ -69,12 +69,12 @@ impl BvhNode {
                 None => None,
             };
 
-            return Some(BvhNode {
+            Some(BvhNode {
                 bb: sorted_list.bounding_box().unwrap(),
                 hittable: None,
                 left: left_node,
                 right: right_node,
-            });
+            })
         }
     }
 }

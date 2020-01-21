@@ -4,11 +4,16 @@ use sdl2::keyboard::Keycode;
 
 use crate::hittables::primitives::Sphere;
 use crate::material::Material;
+use crate::material::Metallic;
 use crate::renderer::Renderer;
 use crate::vec3::Vec3;
+use crate::texture::ConstantTexture;
+use crate::texture::CheckeredTexture;
+use crate::texture::ImageTexture;
 
 use std::sync::Arc;
 use std::time::SystemTime;
+use std::path::PathBuf;
 
 use scoped_threadpool::Pool;
 
@@ -16,6 +21,7 @@ mod camera;
 mod material;
 mod ray;
 mod renderer;
+mod texture;
 mod vec3;
 
 mod hit;
@@ -48,6 +54,7 @@ fn main() {
     let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 10);
 
     //create a 10x10x10 cube of spheres with colorful colors
+    /*
     for x in 0..10u8 {
         for y in 0..10u8 {
             for z in 0..10u8 {
@@ -55,19 +62,35 @@ fn main() {
                 let g = (y as f64 * (220.0 / 10.0) + 10.0) as u8;
                 let b = (z as f64 * (220.0 / 10.0) + 10.0) as u8;
 
+                let color = Arc::new(ConstantTexture::new(Vec3::rgb(r, g, b)));
+                let metallic = Metallic::NonMetal;
+                let refraction = None;
+
                 renderer.add_object(Arc::new(Sphere {
                     center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
                     radius: 0.5,
-                    material: Arc::new(Material::new(Vec3::rgb(r, g, b), 0.0, 0.0, 0.0)),
+                    material: Arc::new(Material::new(color, metallic, refraction)),
                 }));
             }
         }
     }
+    */
+
+    //let texture = Arc::new(ImageTexture::new(PathBuf::from("res/textures/earthmap.jpg")));
+    let texture = Arc::new(CheckeredTexture::new(
+        Arc::new( ConstantTexture::new(Vec3::rgb(0,0,0)) ),
+        Arc::new( ConstantTexture::new(Vec3::rgb(1,1,1)) )
+    ));
+    renderer.add_object(Arc::new(Sphere {
+        center: Vec3::new(7.5, 5.0, 7.5),
+        radius: 15.0,
+        material: Arc::new(Material::new(texture, Metallic::NonMetal, None))
+    }));
 
     let mut pool = Pool::new(40);
 
-    let mut denoise_device = oidn::Device::new();
-    let mut denoise_filter = oidn::filter::RayTracing::new(&mut denoise_device);
+    let denoise_device = oidn::Device::new();
+    let mut denoise_filter = oidn::filter::RayTracing::new(&denoise_device);
     denoise_filter
         .set_srgb(true)
         .set_img_dims(WIDTH as usize, HEIGHT as usize);
@@ -144,7 +167,14 @@ fn main() {
 
         //denoise image
         let mut denoise_buffer = vec![0f32; render_buffer.len()];
-        denoise_filter.execute(&render_buffer[..], &mut denoise_buffer[..]);
+        match denoise_filter.execute(&render_buffer[..], &mut denoise_buffer[..]) {
+            Ok(_) => {},
+            Err(err) => {
+                //if denoising failed, output the actual buffer and print the error message
+                denoise_buffer = render_buffer;
+                println!("{:?}", err);
+            }
+        }
 
         //RGB => BGRA
         let bgra_buffer: Vec<Vec<u8>> = denoise_buffer

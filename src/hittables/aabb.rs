@@ -94,6 +94,7 @@ impl Hit for AABB {
             hit_position: ray.origin + t_max * ray.origin,
             normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?
             material: None,
+            uv_coords: None,
         })
     }
 
