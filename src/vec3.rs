@@ -17,10 +17,12 @@ impl Vec3 {
     }
 
     pub fn rgb(r: u8, g: u8, b: u8) -> Self {
+        //Gamma correct linear values (-> sRGB)
+        const GAMMA: f64 = 1.0 / 2.2;
         Vec3 {
-            x: r as f64 / 255.0,
-            y: g as f64 / 255.0,
-            z: b as f64 / 255.0,
+            x: (r as f64 / 255.0).powf(GAMMA),
+            y: (g as f64 / 255.0).powf(GAMMA),
+            z: (b as f64 / 255.0).powf(GAMMA),
         }
     }
 
@@ -298,7 +300,11 @@ impl<'a> Sum<&'a Vec3> for Vec3 {
 
 impl From<image::Rgba<u8>> for Vec3 {
     fn from(pixel: image::Rgba<u8>) -> Vec3 {
-        Vec3::rgb( pixel[0], pixel[1], pixel[2] )
+        //!DO NOT GAMMA CORRECT IMAGES
+        Vec3::new( 
+            pixel[0] as f64 / 255.0, 
+            pixel[1] as f64 / 255.0, 
+            pixel[2] as f64 / 255.0 )
     }
 }
 

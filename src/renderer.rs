@@ -79,17 +79,11 @@ impl Renderer {
                     );
 
                     //bvh slows us down in small example scenes!
-                    final_color = final_color + self.trace_color(&ray, &bvh);
+                    final_color += self.trace_color(&ray, &bvh);
                 }
 
                 //normalize color after sampling a lot
                 final_color = final_color / self.samples as f64;
-
-                //scale up and gamma correct
-                const GAMMA: f64 = 1.0 / 2.2;
-                final_color.x = final_color.x.powf(GAMMA);
-                final_color.y = final_color.y.powf(GAMMA);
-                final_color.z = final_color.z.powf(GAMMA);
 
                 self.set_pixel(buf, x, y, final_color);
             }
@@ -116,7 +110,8 @@ impl Renderer {
     }
 
     fn background_color(&self, t: f64) -> Vec3 {
-        (1.0-t) * Vec3::rgb(64, 64, 255) + (t) * Vec3::rgb(255, 255, 255) //day
+        Vec3::rgb(255, 255, 255)
+        //(1.0-t) * Vec3::rgb(64, 64, 255) + (t) * Vec3::rgb(255, 255, 255) //day
         //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8)           //night
     }
 }
