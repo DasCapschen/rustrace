@@ -78,11 +78,11 @@ impl Hit for Sphere {
         if root < 0.0 {
             None
         } else {
-            let mut t = (-b + root.sqrt()) / (a);
 
-            //if root is 0, only 1 hit (tangent on sphere), no need to check both
-            if root != 0.0 {
-                t = t.min((-b - root.sqrt()) / (a));
+            //check smaller t first, but if its out of range, check bigger t
+            let mut t = (-b - root.sqrt()) / (a);
+            if t > t_max || t < t_min {
+                t = (-b + root.sqrt()) / (a);
             }
 
             //if t is out of range, no hit
@@ -91,7 +91,9 @@ impl Hit for Sphere {
             }
 
             let hit_position = ray.point_at(t);
-            let normal = (hit_position - self.center).normalised();
+
+            //divide by radius instead of .normalise() => can invert normals with negative radius
+            let normal = (hit_position - self.center) / self.radius;
 
             //code from tutorial says: 1 - (x.atan2(z) + pi) / (2*pi)
             //but exchanging x and z also flips it, so 1- is not necessary
