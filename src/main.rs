@@ -1,3 +1,4 @@
+use crate::material::MetalParameters;
 use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
@@ -51,10 +52,9 @@ fn main() {
     //sdl2_context.mouse().set_relative_mouse_mode(true);
 
     //create the actual raytracer
-    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 10);
+    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 8);
 
     //create a 10x10x10 cube of spheres with colorful colors
-    /*
     for x in 0..10u8 {
         for y in 0..10u8 {
             for z in 0..10u8 {
@@ -69,23 +69,34 @@ fn main() {
                 renderer.add_object(Arc::new(Sphere {
                     center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
                     radius: 0.5,
-                    material: Arc::new(Material::new(color, metallic, refraction)),
+                    material: Arc::new(Material::new(color, None, metallic, refraction)),
                 }));
             }
         }
     }
-    */
 
-    //let texture = Arc::new(ImageTexture::new(PathBuf::from("res/textures/earthmap.jpg")));
-    let texture = Arc::new(CheckeredTexture::new(
-        Arc::new( ConstantTexture::new(Vec3::rgb(0,0,0)) ),
-        Arc::new( ConstantTexture::new(Vec3::rgb(1,1,1)) )
-    ));
+    let skybox_texture = Arc::new(ImageTexture::new("res/textures/skybox.jpg".into()));
+    renderer.add_object(Arc::new(Sphere{
+        center: Vec3::new(7.5, 5.0, 7.5),
+        radius: 100.0,
+        material: Arc::new(Material::new(skybox_texture, None, Metallic::NonMetal, None)),
+    }));
+    
+    /*
+    let texture = Arc::new(ImageTexture::new(PathBuf::from("res/textures/globe.jpg")));
+    let normal = Arc::new(ImageTexture::new(PathBuf::from("res/textures/globeNormal.jpg")));
+
+    let metal_params = MetalParameters {
+        metallic: Arc::new(ConstantTexture::new(Vec3::rgb(255,255,255))),
+        roughness: Arc::new(ConstantTexture::new(Vec3::rgb(64,64,64))),
+    };
+
     renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(7.5, 5.0, 7.5),
         radius: 15.0,
-        material: Arc::new(Material::new(texture, Metallic::NonMetal, None))
+        material: Arc::new(Material::new(texture, Some(normal), Metallic::NonMetal, None))
     }));
+    */
 
     let mut pool = Pool::new(40);
 
