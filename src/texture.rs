@@ -1,5 +1,4 @@
-use image::DynamicImage;
-use image::GenericImageView;
+use image2::{ImageBuf, Rgb, Image};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -26,8 +25,7 @@ pub struct ConstantTexture {
 impl ConstantTexture {
     pub fn new(color: Vec3) -> Self {
         Self {
-            //copy color
-            color: color
+           color
         }
     }
 }
@@ -76,12 +74,17 @@ impl Texture for Perlin {
 
 #[derive(Clone)]
 pub struct ImageTexture {
-    data: DynamicImage,
+    data: ImageBuf<f64, Rgb>,
 }
 impl ImageTexture {
-    pub fn new(filepath: PathBuf) -> Self {
+    pub fn new<P: AsRef<Path>>(filepath: P) -> Self {
+        //reads the image as float (64bit) RGB (LDR is "promoted" to HDR! HDR stays HDR)
+        //this is *linear* colorspace!
+        let ptr = image2::io::read_f32(filepath).expect("failed to load image!");
+        let mut buf = ImageBuf::new(ptr.width(), ptr.height());
+        ptr.convert_type(&mut buf);
         Self {
-            data: image::open(filepath).expect("failed to load image")
+            data: buf
         }
     }
 }
@@ -101,13 +104,13 @@ impl Texture for ImageTexture {
         let v_hi = v.ceil();
         let beta = v - v_lo;
 
-        let px1: Vec3 = self.data.get_pixel(u_lo as u32, v_lo as u32).into();
-        let px2: Vec3 = self.data.get_pixel(u_hi as u32, v_lo as u32).into();
+        let px1: Vec3 = self.data.at(u_lo as usize, v_lo as usize).into();
+        let px2: Vec3 = self.data.at(u_hi as usize, v_lo as usize).into();
 
         let interp1 = (1.0 - alpha) * px1 + alpha * px2;
 
-        let px1: Vec3 = self.data.get_pixel(u_lo as u32, v_hi as u32).into();
-        let px2: Vec3 = self.data.get_pixel(u_hi as u32, v_hi as u32).into();
+        let px1: Vec3 = self.data.at(u_lo as usize, v_hi as usize).into();
+        let px2: Vec3 = self.data.at(u_hi as usize, v_hi as usize).into();
 
         let interp2 = (1.0 - alpha) * px1 + alpha * px2;
 

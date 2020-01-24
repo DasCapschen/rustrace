@@ -12,8 +12,8 @@ debug = true
 [dependencies]
 rand = "0.7.3"
 scoped_threadpool = "0.1.9"
-oidn = "1.1.0"
-image = "0.22.4"
+oidn = { path = "../oidn-rs-master" }
+image2 = "0.11.3"
 
 [dependencies.sdl2]
 version = "0.32.2"

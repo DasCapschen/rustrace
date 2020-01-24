@@ -1,3 +1,4 @@
+use std::ops::DivAssign;
 use rand::Rng;
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -11,18 +12,17 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    /// ctor
+    /// Creates a new vector the given components
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { x, y, z }
     }
 
+    /// Creates a new Vector, converting from 0..255 to 0.0..1.0
     pub fn rgb(r: u8, g: u8, b: u8) -> Self {
-        //Gamma correct linear values (-> sRGB)
-        const GAMMA: f64 = 1.0 / 2.2;
         Vec3 {
-            x: (r as f64 / 255.0).powf(GAMMA),
-            y: (g as f64 / 255.0).powf(GAMMA),
-            z: (b as f64 / 255.0).powf(GAMMA),
+            x: r as f64 / 255.0,
+            y: g as f64 / 255.0,
+            z: b as f64 / 255.0,
         }
     }
 
@@ -221,6 +221,15 @@ impl Div<f64> for Vec3 {
     }
 }
 
+//divide by scalar
+impl DivAssign<f64> for Vec3 {
+    fn div_assign(&mut self, rhs: f64) {
+        self.x /= rhs;
+        self.y /= rhs;
+        self.z /= rhs;
+    }
+}
+
 //divide by vector
 impl Div<Vec3> for Vec3 {
     type Output = Vec3;
@@ -233,6 +242,7 @@ impl Div<Vec3> for Vec3 {
         }
     }
 }
+
 
 //add vector
 impl Add<Vec3> for Vec3 {
@@ -298,17 +308,18 @@ impl<'a> Sum<&'a Vec3> for Vec3 {
     }
 }
 
-impl From<image::Rgba<u8>> for Vec3 {
-    fn from(pixel: image::Rgba<u8>) -> Vec3 {
-        //!DO NOT GAMMA CORRECT IMAGES
-        Vec3::new( 
-            pixel[0] as f64 / 255.0, 
-            pixel[1] as f64 / 255.0, 
-            pixel[2] as f64 / 255.0 )
+impl From<&[f64]> for Vec3 {
+    fn from(slice: &[f64]) -> Self {
+        if slice.len() < 3 {
+            todo!("handle error");
+        }
+        Vec3 {
+            x: slice[0],
+            y: slice[1],
+            z: slice[2],
+        }
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
