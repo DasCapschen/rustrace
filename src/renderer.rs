@@ -1,3 +1,4 @@
+use crate::texture::Texture;
 use rand::Rng;
 use std::sync::Arc;
 
@@ -14,10 +15,11 @@ pub struct Renderer {
     samples: u8,
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
+    sky: Arc<dyn Texture>,
 }
 
 impl Renderer {
-    pub fn new(width: i32, height: i32, samples: u8) -> Self {
+    pub fn new(width: i32, height: i32, samples: u8, sky: Arc<dyn Texture>) -> Self {
         let pos = Vec3::new(-7.0, 20.0, -7.0);
         let target = Vec3::new(7.5, 5.0, 7.5); //sphere center
         let dir = target - pos;
@@ -32,6 +34,7 @@ impl Renderer {
                 0.0, //perfect camera => aperture = 0 ; => no DoF ; bigger aperture => stronger DoF
             ),
             objects: Vec::new(),
+            sky,
         }
     }
 
@@ -54,9 +57,9 @@ impl Renderer {
         buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
     }
 
-    pub fn draw_image(&self, buf: &mut [f32], offset: usize) {
+    pub fn draw_image(&self, color_buf: &mut [f32], albedo_buf: &mut [f32], normal_buf: &mut [f32], offset: usize) {
         // /width because line width, /3 because RGB
-        let y_max = buf.len() / self.width as usize / 3;
+        let y_max = color_buf.len() / self.width as usize / 3;
 
         let offset = offset / 3; //RGB
         let y_offset = (offset / self.width as usize) as i32; // /width because line width
@@ -70,48 +73,72 @@ impl Renderer {
         for x in 0..self.width {
             for y in 0..y_max as i32 {
                 let mut final_color = Vec3::rgb(0, 0, 0);
+                let mut final_albedo = Vec3::rgb(0, 0, 0);
+                let mut final_normal = Vec3::rgb(0, 0, 0);
 
                 //multisample
-                for _s in 0..self.samples {
+                for _ in 0..self.samples {
                     let ray = self.camera.get_ray(
                         (x + x_offset) as f64 + rng.gen_range(0.0, 1.0),
                         (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
-                    //bvh slows us down in small example scenes!
-                    final_color += self.trace_color(&ray, &bvh);
+                    let (color, albedo, normal) = self.trace_color(&ray, &bvh);
+
+                    final_color += color;
+
+                    //I am not sure if these should be sampled multiple times...
+                    final_albedo += albedo;
+                    final_normal += 0.5 * (normal + Vec3::new(1.0, 1.0, 1.0)); //[-1,1] => [0,1]
                 }
 
                 //normalize color after sampling a lot
-                final_color = final_color / self.samples as f64;
+                final_color /= self.samples as f64;
+                final_albedo /= self.samples as f64;
+                final_normal /= self.samples as f64;
 
-                self.set_pixel(buf, x, y, final_color);
+                self.set_pixel(color_buf, x, y, final_color);
+                self.set_pixel(albedo_buf, x, y, final_albedo);
+                self.set_pixel(normal_buf, x, y, final_normal);
             }
         }
     }
 
-    fn trace_color(&self, ray: &Ray, object: &dyn Hit) -> Vec3 {
+    /// # Return Value
+    /// Returns Tuple of (Color, Albedo, Normal)
+    fn trace_color(&self, ray: &Ray, object: &dyn Hit) -> (Vec3, Vec3, Vec3) {
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
+        let mut out_albedo: Option<Vec3> = None;
+        let mut out_normal: Option<Vec3> = None;
+
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
             if let Some(mat) = &hit.material {
-                if let Some((attenuation, scattered_ray)) = mat.scatter(&ray_to_use, &hit) {
+                if let Some((attenuation, normal, scattered_ray)) = mat.scatter(&ray_to_use, &hit) {
                     ray_to_use = scattered_ray;
                     final_attenuation = final_attenuation * attenuation;
+
+                    //remember albedo and normal for the first object hit
+                    if out_albedo.is_none() { out_albedo = Some(attenuation); }
+                    if out_normal.is_none() { out_normal = Some(normal); }
                     continue;
                 }
             }
+            if out_normal.is_none() { out_normal = Some(hit.normal); }
             //else
-            return Vec3::new(0.0, 0.0, 0.0);
+            let temp = Vec3::new(0.0, 0.0, 0.0);
+            return (temp, temp, out_normal.unwrap());
         }
 
-        let t = 0.5 * (ray.direction.normalised().y + 1.0);
-        self.background_color(t) * final_attenuation
-    }
+        //calculate uv coords from ray direction
+        let u = 1.0 - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI));
+        let v = ((-ray_to_use.direction.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
 
-    fn background_color(&self, t: f64) -> Vec3 {
-        Vec3::rgb(255, 255, 255)
-        //(1.0-t) * Vec3::rgb(64, 64, 255) + (t) * Vec3::rgb(255, 255, 255) //day
-        //(1.0 - t) * Vec3::rgb(0, 0, 0) + t * Vec3::rgb(2, 4, 8)           //night
+        let skycolor = self.sky.texture((u,v));
+        if out_albedo.is_none() { out_albedo = Some(skycolor) }
+        if out_normal.is_none() { out_normal = Some(Vec3::new(0.0, 0.0, 0.0)) }
+
+        let color = skycolor * final_attenuation;
+        (color, out_albedo.unwrap(), out_normal.unwrap())
     }
 }

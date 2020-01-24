@@ -7,13 +7,12 @@ use crate::hit::HitResult;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
-//TODO: Normal Maps
+/* TODO: refactor Material to trait? */
 
 #[derive(Clone)]
 pub struct Material {
-    albedo: Arc<dyn Texture>,
+    pub albedo: Arc<dyn Texture>,
     normalmap: Option<Arc<dyn Texture>>,
-
     metallic: Metallic,
     refraction: Option<f64>,
 }
@@ -31,6 +30,12 @@ pub struct MetalParameters {
 }
 
 impl Material {
+    /// Constructs a new Material with the given options
+    /// # Arguments
+    /// * `albedo` - texture for the "color" of the object
+    /// * `normalmap` - normalmap texture, or None if no normal is wished
+    /// * `metallic` - whether the material represents a metal, or a nonmetal
+    /// * `refraction` - the refractive index of the material, or None if not refracting
     pub fn new(albedo: Arc<dyn Texture>, normalmap: Option<Arc<dyn Texture>>, metallic: Metallic, refraction: Option<f64>) -> Self {
         Material {
             albedo,
@@ -41,7 +46,7 @@ impl Material {
     }
 
     /// Returns Option<Tuple (Attenuation, Scattered Ray)>
-    pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Ray)> {
+    pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray)> {
         let uv_coords = hit.uv_coords.unwrap();
 
         let mut normal = hit.normal.normalised();
@@ -120,7 +125,7 @@ impl Material {
         let scattered = Ray::new(hit.hit_position, direction);
 
         //return final
-        Some((albedo, scattered))
+        Some((albedo, normal, scattered))
     }
 
     fn schlick(&self, cosine: f64) -> f64 {
