@@ -1,5 +1,5 @@
 use std::clone::Clone;
-use std::fmt::Debug;
+
 use std::sync::Arc;
 
 use crate::hit::{Hit, HitResult};
@@ -82,7 +82,6 @@ impl Hit for Sphere {
         if root < 0.0 {
             None
         } else {
-
             //check smaller t first, but if its out of range, check bigger t
             let mut t = (-b - root.sqrt()) / (a);
             if t > t_max || t < t_min {
@@ -99,7 +98,9 @@ impl Hit for Sphere {
             //divide by radius instead of .normalise() => can invert normals with negative radius
             let normal = (hit_position - self.center) / self.radius;
 
-            let u = 1.0 - ((normal.z.atan2(normal.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI));
+            let u = 1.0
+                - ((normal.z.atan2(normal.x) + std::f64::consts::PI)
+                    / (2.0 * std::f64::consts::PI));
 
             //negative because our y axis (image) is flipped
             let v = ((-normal.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
@@ -109,7 +110,7 @@ impl Hit for Sphere {
                 hit_position,
                 normal,
                 material: Some(self.material.clone()),
-                uv_coords: Some((u,v)),
+                uv_coords: Some((u, v)),
             })
         }
     }
@@ -189,8 +190,8 @@ impl Hit for Plane {
 
         // 2.0* because it's relative to lower left corner, not center!
         // alpha and beta are in [0;1] if inside the plane
-        let mut u = hit_on_span_a.len() / (2.0*self.span_a.len());
-        let mut v = hit_on_span_b.len() / (2.0*self.span_b.len());
+        let mut u = hit_on_span_a.len() / (2.0 * self.span_a.len());
+        let mut v = hit_on_span_b.len() / (2.0 * self.span_b.len());
 
         let mut hit_outside_bounds = false;
 
@@ -208,7 +209,7 @@ impl Hit for Plane {
             hit_position,
             normal,
             material: Some(self.material.clone()),
-            uv_coords: Some((u,v)),
+            uv_coords: Some((u, v)),
         };
 
         Some(result)

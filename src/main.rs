@@ -1,5 +1,3 @@
-use crate::hittables::primitives::Plane;
-use crate::material::MetalParameters;
 use sdl2::event::Event;
 
 use sdl2::keyboard::Keycode;
@@ -8,9 +6,9 @@ use crate::hittables::primitives::Sphere;
 use crate::material::Material;
 use crate::material::Metallic;
 use crate::renderer::Renderer;
-use crate::vec3::Vec3;
 use crate::texture::ConstantTexture;
-use crate::texture::CheckeredTexture;
+use crate::vec3::Vec3;
+
 use crate::texture::ImageTexture;
 
 use std::sync::Arc;
@@ -59,7 +57,7 @@ fn main() {
     let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 64, skybox);
 
     //create a 10x10x10 cube of spheres with colorful colors
-    
+
     for x in 0..10u8 {
         for y in 0..10u8 {
             for z in 0..10u8 {
@@ -79,7 +77,6 @@ fn main() {
             }
         }
     }
-    
 
     /*
     let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -95,7 +92,7 @@ fn main() {
         material: Arc::new(ground_mat),
     }));
     */
-    
+
     //let texture = Arc::new(ImageTexture::new("res/textures/globe.jpg"));
     //let normal = Arc::new(ImageTexture::new("res/textures/globeNormal.jpg"));
     /*let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
@@ -110,7 +107,6 @@ fn main() {
         radius: 15.0,
         material: Arc::new(Material::new(texture, None, Metallic::NonMetal, None))
     }));*/
-    
 
     let mut pool = Pool::new(40);
 
@@ -169,8 +165,6 @@ fn main() {
             }
         }
 
-        
-
         let subdiv = pool.thread_count() as usize;
         let len = color_buffer.len() / subdiv;
 
@@ -200,21 +194,32 @@ fn main() {
         });
 
         let render_end_time = SystemTime::now();
-        println!("Render took {:?}", render_end_time.duration_since(render_start_time).unwrap());
+        println!(
+            "Render took {:?}",
+            render_end_time.duration_since(render_start_time).unwrap()
+        );
 
         let denoise_start_time = SystemTime::now();
 
         //denoise image
         let mut denoise_buffer = vec![0f32; color_buffer.len()];
-        match denoise_filter.execute(&color_buffer[..], Some(&albedo_buffer[..]), Some(&normal_buffer[..]), &mut denoise_buffer[..]) {
-            Ok(_) => {},
+        match denoise_filter.execute(
+            &color_buffer[..],
+            Some(&albedo_buffer[..]),
+            Some(&normal_buffer[..]),
+            &mut denoise_buffer[..],
+        ) {
+            Ok(_) => {}
             Err(err) => {
                 panic!("{:?}", err);
             }
         }
 
         let denoise_end_time = SystemTime::now();
-        println!("Denoising took {:?}", denoise_end_time.duration_since(denoise_start_time).unwrap());
+        println!(
+            "Denoising took {:?}",
+            denoise_end_time.duration_since(denoise_start_time).unwrap()
+        );
 
         let convert_start_time = SystemTime::now();
         //RGB => BGRA
@@ -234,7 +239,10 @@ fn main() {
             .collect();
 
         let convert_end_time = SystemTime::now();
-        println!("Post processing took {:?}", convert_end_time.duration_since(convert_start_time).unwrap());
+        println!(
+            "Post processing took {:?}",
+            convert_end_time.duration_since(convert_start_time).unwrap()
+        );
 
         //write pixels
         let mut surface = window.surface(&event_pump).unwrap();
@@ -242,11 +250,13 @@ fn main() {
             pixel_buffer.copy_from_slice(&bgra_buffer[..]);
         }
 
-        println!("Total draw time was: {:?}", convert_end_time.duration_since(render_start_time).unwrap());
+        println!(
+            "Total draw time was: {:?}",
+            convert_end_time.duration_since(render_start_time).unwrap()
+        );
         println!("=========================");
 
         //"swap" images
         surface.update_window().expect("failed to update windows!");
-
     }
 }

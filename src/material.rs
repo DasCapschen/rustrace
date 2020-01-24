@@ -1,7 +1,6 @@
 use crate::texture::Texture;
-use std::sync::Arc;
 use rand::Rng;
-use std::fmt::Debug;
+use std::sync::Arc;
 
 use crate::hit::HitResult;
 use crate::ray::Ray;
@@ -20,7 +19,7 @@ pub struct Material {
 #[derive(Clone)]
 pub enum Metallic {
     Metal(MetalParameters),
-    NonMetal
+    NonMetal,
 }
 
 #[derive(Clone)]
@@ -36,7 +35,12 @@ impl Material {
     /// * `normalmap` - normalmap texture, or None if no normal is wished
     /// * `metallic` - whether the material represents a metal, or a nonmetal
     /// * `refraction` - the refractive index of the material, or None if not refracting
-    pub fn new(albedo: Arc<dyn Texture>, normalmap: Option<Arc<dyn Texture>>, metallic: Metallic, refraction: Option<f64>) -> Self {
+    pub fn new(
+        albedo: Arc<dyn Texture>,
+        normalmap: Option<Arc<dyn Texture>>,
+        metallic: Metallic,
+        refraction: Option<f64>,
+    ) -> Self {
         Material {
             albedo,
             normalmap,
@@ -62,7 +66,7 @@ impl Material {
             // 4) get image normal
             let img_normal = normalmap.texture(uv_coords);
             // 5) scale to [-1,1]
-            let img_normal = (2.0 * img_normal) - Vec3::new(1.0,1.0,1.0);
+            let img_normal = (2.0 * img_normal) - Vec3::new(1.0, 1.0, 1.0);
             // 5) get new normal (this could be done with a mat3!)
             normal = tangent * img_normal.x + bitangent * img_normal.y + normal * img_normal.z;
         }

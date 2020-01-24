@@ -57,7 +57,13 @@ impl Renderer {
         buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
     }
 
-    pub fn draw_image(&self, color_buf: &mut [f32], albedo_buf: &mut [f32], normal_buf: &mut [f32], offset: usize) {
+    pub fn draw_image(
+        &self,
+        color_buf: &mut [f32],
+        albedo_buf: &mut [f32],
+        normal_buf: &mut [f32],
+        offset: usize,
+    ) {
         // /width because line width, /3 because RGB
         let y_max = color_buf.len() / self.width as usize / 3;
 
@@ -119,24 +125,37 @@ impl Renderer {
                     final_attenuation = final_attenuation * attenuation;
 
                     //remember albedo and normal for the first object hit
-                    if out_albedo.is_none() { out_albedo = Some(attenuation); }
-                    if out_normal.is_none() { out_normal = Some(normal); }
+                    if out_albedo.is_none() {
+                        out_albedo = Some(attenuation);
+                    }
+                    if out_normal.is_none() {
+                        out_normal = Some(normal);
+                    }
                     continue;
                 }
             }
-            if out_normal.is_none() { out_normal = Some(hit.normal); }
+            if out_normal.is_none() {
+                out_normal = Some(hit.normal);
+            }
             //else
             let temp = Vec3::new(0.0, 0.0, 0.0);
             return (temp, temp, out_normal.unwrap());
         }
 
         //calculate uv coords from ray direction
-        let u = 1.0 - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI));
-        let v = ((-ray_to_use.direction.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
+        let u = 1.0
+            - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f64::consts::PI)
+                / (2.0 * std::f64::consts::PI));
+        let v =
+            ((-ray_to_use.direction.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
 
-        let skycolor = self.sky.texture((u,v));
-        if out_albedo.is_none() { out_albedo = Some(skycolor) }
-        if out_normal.is_none() { out_normal = Some(Vec3::new(0.0, 0.0, 0.0)) }
+        let skycolor = self.sky.texture((u, v));
+        if out_albedo.is_none() {
+            out_albedo = Some(skycolor)
+        }
+        if out_normal.is_none() {
+            out_normal = Some(Vec3::new(0.0, 0.0, 0.0))
+        }
 
         let color = skycolor * final_attenuation;
         (color, out_albedo.unwrap(), out_normal.unwrap())

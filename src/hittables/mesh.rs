@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::hit::{HitResult, Hit};
+use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
 use crate::hittables::primitives::Triangle;
 use crate::ray::Ray;

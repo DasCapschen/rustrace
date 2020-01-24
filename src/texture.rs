@@ -1,8 +1,8 @@
-use image2::{ImageBuf, Rgb, Image};
+use image2::{Image, ImageBuf, Rgb};
 use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
+
 use crate::vec3::Vec3;
+use std::sync::Arc;
 
 /*
 TODO: implement filtering
@@ -10,7 +10,7 @@ TODO: implement filtering
 
 pub trait Texture: Send + Sync {
     /// returns a color as vec3 from UV coordinates
-    fn texture(&self, uv_coords: (f64,f64)) -> Vec3;
+    fn texture(&self, uv_coords: (f64, f64)) -> Vec3;
 }
 
 pub enum TextureFilter {
@@ -20,17 +20,15 @@ pub enum TextureFilter {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ConstantTexture {
-    color: Vec3
+    color: Vec3,
 }
 impl ConstantTexture {
     pub fn new(color: Vec3) -> Self {
-        Self {
-           color
-        }
+        Self { color }
     }
 }
 impl Texture for ConstantTexture {
-    fn texture(&self, uv_coords: (f64,f64)) -> Vec3 {
+    fn texture(&self, _uv_coords: (f64, f64)) -> Vec3 {
         self.color
     }
 }
@@ -42,17 +40,14 @@ pub struct CheckeredTexture {
 }
 impl CheckeredTexture {
     pub fn new(texture1: Arc<dyn Texture>, texture2: Arc<dyn Texture>) -> Self {
-        CheckeredTexture {
-            texture1,
-            texture2,
-        }
+        CheckeredTexture { texture1, texture2 }
     }
 }
 impl Texture for CheckeredTexture {
-    fn texture(&self, uv_coords: (f64,f64)) -> Vec3 {
-        let (u,v) = uv_coords;
+    fn texture(&self, uv_coords: (f64, f64)) -> Vec3 {
+        let (u, v) = uv_coords;
 
-        let it = (10.0*u).sin() * (10.0*v).sin();
+        let it = (10.0 * u).sin() * (10.0 * v).sin();
         if it < 0.0 {
             self.texture1.texture(uv_coords)
         } else {
@@ -67,7 +62,7 @@ pub struct Perlin;
 impl Perlin {}
 impl Texture for Perlin {
     fn texture(&self, u: f64, v: f64) -> Vec3 {
-        
+
     }
 }
 */
@@ -83,18 +78,16 @@ impl ImageTexture {
         let ptr = image2::io::read_f32(filepath).expect("failed to load image!");
         let mut buf = ImageBuf::new(ptr.width(), ptr.height());
         ptr.convert_type(&mut buf);
-        Self {
-            data: buf
-        }
+        Self { data: buf }
     }
 }
 impl Texture for ImageTexture {
-    fn texture(&self, uv_coords: (f64,f64)) -> Vec3 {
-        let (u,v) = uv_coords;
+    fn texture(&self, uv_coords: (f64, f64)) -> Vec3 {
+        let (u, v) = uv_coords;
 
         //scale u,v from [0,1] to [0,width) or [0,height)
-        let u = u * (self.data.width()-1) as f64;
-        let v = v * (self.data.height()-1) as f64;
+        let u = u * (self.data.width() - 1) as f64;
+        let v = v * (self.data.height() - 1) as f64;
 
         let u_lo = u.floor();
         let u_hi = u.ceil();

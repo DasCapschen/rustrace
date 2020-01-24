@@ -1,6 +1,6 @@
-use std::ops::DivAssign;
 use rand::Rng;
 use std::iter::Sum;
+use std::ops::DivAssign;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
 //auto-implement printing
@@ -243,7 +243,6 @@ impl Div<Vec3> for Vec3 {
     }
 }
 
-
 //add vector
 impl Add<Vec3> for Vec3 {
     type Output = Vec3;
@@ -297,7 +296,6 @@ impl Neg for Vec3 {
     }
 }
 
-
 impl<'a> Sum<&'a Vec3> for Vec3 {
     fn sum<I: Iterator<Item = &'a Vec3>>(iter: I) -> Vec3 {
         let mut result = Vec3::new(0.0, 0.0, 0.0);
@@ -327,40 +325,54 @@ mod tests {
 
     #[test]
     fn test_new() {
-        assert_eq!( Vec3::new(1.0, 2.0, 3.0), Vec3 { x: 1.0, y: 2.0, z: 3.0 } )
+        assert_eq!(
+            Vec3::new(1.0, 2.0, 3.0),
+            Vec3 {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            }
+        )
     }
 
     #[test]
     fn test_rgb() {
-        assert_eq!( Vec3::rgb(255, 204, 153), Vec3 { x: 1.0, y: 0.8, z: 0.6 } )
+        assert_eq!(
+            Vec3::rgb(255, 204, 153),
+            Vec3 {
+                x: 1.0,
+                y: 0.8,
+                z: 0.6
+            }
+        )
     }
 
     #[test]
     fn test_len() {
-        assert!( (Vec3::new(3.0, 4.0, 0.0).len()-5.0).abs() < std::f64::EPSILON )
+        assert!((Vec3::new(3.0, 4.0, 0.0).len() - 5.0).abs() < std::f64::EPSILON)
     }
 
     #[test]
     fn test_len_squared() {
-        assert!( (Vec3::new(3.0, 4.0, 0.0).len_squared()-25.0).abs() < std::f64::EPSILON )
+        assert!((Vec3::new(3.0, 4.0, 0.0).len_squared() - 25.0).abs() < std::f64::EPSILON)
     }
 
     #[test]
     fn test_dot() {
         let u = Vec3::new(1.0, 2.0, 3.0);
         let v = Vec3::new(4.0, -1.0, 0.0);
-        assert!((u.dot(v)-2.0).abs() < std::f64::EPSILON)
+        assert!((u.dot(v) - 2.0).abs() < std::f64::EPSILON)
     }
 
     #[test]
     fn test_cross() {
         let u = Vec3::new(1.0, 0.0, 0.0);
         let v = Vec3::new(0.0, 1.0, 0.0);
-        assert_eq!( u.cross(v), Vec3::new(0.0, 0.0, 1.0));
+        assert_eq!(u.cross(v), Vec3::new(0.0, 0.0, 1.0));
 
         let u = Vec3::new(1.0, 2.0, -3.0);
         let v = Vec3::new(5.0, 0.0, 1.0);
-        assert_eq!( u.cross(v), Vec3::new(2.0, -16.0, -10.0));
+        assert_eq!(u.cross(v), Vec3::new(2.0, -16.0, -10.0));
     }
 
     #[test]
@@ -375,52 +387,51 @@ mod tests {
     }
 
     #[test]
-    fn test_refract() {
-    }
+    fn test_refract() {}
 
     #[test]
     fn test_add() {
         let u = Vec3::new(1.0, 2.0, 3.0);
         let v = Vec3::new(4.0, 3.0, 2.0);
-        assert_eq!(u+v, Vec3::new(5.0, 5.0, 5.0));
+        assert_eq!(u + v, Vec3::new(5.0, 5.0, 5.0));
 
         let u = Vec3::new(1.0, 2.0, 3.0);
         let v = Vec3::new(-1.0, -2.0, -3.0);
-        assert_eq!(u+v, Vec3::new(0.0, 0.0, 0.0));
+        assert_eq!(u + v, Vec3::new(0.0, 0.0, 0.0));
     }
 
     #[test]
     fn test_mul_scalar() {
         let u = Vec3::new(0.0, 2.0, -5.0);
-        assert_eq!( 2.0*u, Vec3::new(0.0, 4.0, -10.0) );
-        assert_eq!( u*2.0, Vec3::new(0.0, 4.0, -10.0) );
+        assert_eq!(2.0 * u, Vec3::new(0.0, 4.0, -10.0));
+        assert_eq!(u * 2.0, Vec3::new(0.0, 4.0, -10.0));
     }
     #[test]
     fn test_mul_vec() {
         let u = Vec3::new(3.0, 1.0, -2.0);
         let v = Vec3::new(0.0, -1.0, 2.0);
-        assert_eq!(u*v, Vec3::new(0.0, -1.0, -4.0));
-        assert_eq!(v*u, Vec3::new(0.0, -1.0, -4.0));
+        assert_eq!(u * v, Vec3::new(0.0, -1.0, -4.0));
+        assert_eq!(v * u, Vec3::new(0.0, -1.0, -4.0));
     }
 
     #[test]
     fn test_div_scalar() {
         let u = Vec3::new(3.0, 1.0, -2.0);
-        assert_eq!( u/2.0, Vec3::new(1.5, 0.5, -1.0) );
+        assert_eq!(u / 2.0, Vec3::new(1.5, 0.5, -1.0));
     }
     #[test]
     fn test_div_vec() {
         let v = Vec3::new(0.0, -1.0, 4.0);
         let u = Vec3::new(3.0, 2.0, -2.0);
-        assert_eq!(v/u, Vec3::new(0.0, -0.5, -2.0));
-        assert_eq!(u/v, Vec3::new(std::f64::INFINITY, -2.0, -0.5)); //oh god why
+        assert_eq!(v / u, Vec3::new(0.0, -0.5, -2.0));
+        assert_eq!(u / v, Vec3::new(std::f64::INFINITY, -2.0, -0.5)); //oh god why
     }
 
     #[test]
     fn test_sub() {
         let v = Vec3::new(5.0, 7.0, 2.0);
         let u = Vec3::new(7.0, 5.0, 2.0);
-        assert_eq!(v-u, Vec3::new(-2.0, 2.0, 0.0))
+        assert_eq!(v - u, Vec3::new(-2.0, 2.0, 0.0))
     }
 
     #[test]
@@ -432,7 +443,7 @@ mod tests {
 
     #[test]
     fn test_neg() {
-        assert_eq!( -Vec3::new(1.0, 0.0, -2.0), Vec3::new(-1.0, 0.0, 2.0))
+        assert_eq!(-Vec3::new(1.0, 0.0, -2.0), Vec3::new(-1.0, 0.0, 2.0))
     }
 
     #[test]
@@ -441,12 +452,11 @@ mod tests {
             Vec3::new(1.0, 2.0, 3.0),
             Vec3::new(2.0, 1.0, 3.0),
             Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(-1.0, 2.0, -6.0)
+            Vec3::new(-1.0, 2.0, -6.0),
         ];
 
-        let sum: Vec3 =  a.iter().sum();
+        let sum: Vec3 = a.iter().sum();
 
         assert_eq!(sum, Vec3::new(2.0, 5.0, 0.0))
     }
-    
 }
