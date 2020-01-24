@@ -3,14 +3,20 @@ use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::mem::swap;
 
-//axis aligned bounding box
+/// Implements an Axis-Aligned Bounding-Box
 #[derive(Debug, Copy, Clone)]
 pub struct AABB {
-    start: Vec3, //start < end !!
-    end: Vec3,   //end > start !!
+    /// the "starting" point (lower left front corner) ; must be < end!
+    start: Vec3,
+    /// the "ending" point (upper right back corner) ; must be > start!
+    end: Vec3,
 }
 
 impl AABB {
+    /// Creates a new AABB
+    /// # Arguments
+    /// * `start` - the lower left front corner of the box
+    /// * `end` - the upper right back corner of the box
     pub fn new(start: Vec3, end: Vec3) -> Self {
         //start < end !
         if start.len_squared() > end.len_squared() {
@@ -22,6 +28,7 @@ impl AABB {
         Self { start, end }
     }
 
+    /// Returns a new AABB which surrounds both given AABBs
     pub fn surrounding_box(box1: &Self, box2: &Self) -> Self {
         Self {
             start: Vec3::new(

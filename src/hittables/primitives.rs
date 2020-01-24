@@ -52,10 +52,14 @@ struct Triangle {
 
 */
 
+/// Represents a Sphere in 3D space
 #[derive(Clone)]
 pub struct Sphere {
+    /// the center (or position) of the sphere
     pub center: Vec3,
+    /// the radius of the sphere
     pub radius: f64,
+    /// the material (color, etc) of the sphere
     pub material: Arc<Material>,
 }
 
@@ -95,9 +99,7 @@ impl Hit for Sphere {
             //divide by radius instead of .normalise() => can invert normals with negative radius
             let normal = (hit_position - self.center) / self.radius;
 
-            //code from tutorial says: 1 - (x.atan2(z) + pi) / (2*pi)
-            //but exchanging x and z also flips it, so 1- is not necessary
-            let u = (normal.z.atan2(normal.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI);
+            let u = 1.0 - ((normal.z.atan2(normal.x) + std::f64::consts::PI) / (2.0*std::f64::consts::PI));
 
             //negative because our y axis (image) is flipped
             let v = ((-normal.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
@@ -124,6 +126,8 @@ impl Hit for Sphere {
     }
 }
 
+/// represents a flat plane in 3d space
+/// infinite planes no longer work after introduction of BVH
 #[derive(Clone)]
 pub struct Plane {
     // +---------+
@@ -136,10 +140,13 @@ pub struct Plane {
     // normal = a x b
     // width = 2 * |a|
     // height = 2 * |b|
+    /// the center (or position) of the plane
     pub center: Vec3,
+    /// the first spanning vector
     pub span_a: Vec3,
+    /// the second spanning vector
     pub span_b: Vec3,
-    pub infinite: bool,
+    /// the material (color, etc) of the plane
     pub material: Arc<Material>,
 }
 
@@ -165,41 +172,44 @@ impl Hit for Plane {
 
         //TODO: calculate UV coordinates
 
+        //from lower left corner to hit
+        let llc = self.center - self.span_a - self.span_b;
+        let relative_hit = hit_position - llc;
+
+        let a_normalised = self.span_a.normalised();
+        let b_normalised = self.span_b.normalised();
+
+        //calculate only span_a / only span_b "component" of hit vector
+        //if span_b was (0,4) and span_a was (7,0) and hit was (3, 2)
+        //then, hit_on_span_a = (3,2) - (0,1) * 2 = (3,0)
+        //then, hit_on_span_b = (3,2) - (1,0) * 3 = (0,2)
+        // see vector_in_plane.ggb (geogebra)
+        let hit_on_span_a = relative_hit - b_normalised * (relative_hit.dot(b_normalised));
+        let hit_on_span_b = relative_hit - a_normalised * (relative_hit.dot(a_normalised));
+
+        // 2.0* because it's relative to lower left corner, not center!
+        // alpha and beta are in [0;1] if inside the plane
+        let mut u = hit_on_span_a.len() / (2.0*self.span_a.len());
+        let mut v = hit_on_span_b.len() / (2.0*self.span_b.len());
+
+        let mut hit_outside_bounds = false;
+
+        if u > 1.0 {
+            u = u.fract();
+            hit_outside_bounds = true;
+        }
+        if v > 1.0 {
+            v = v.fract();
+            hit_outside_bounds = true;
+        }
+
         let result = HitResult {
             ray_param: parameter,
             hit_position,
             normal,
             material: Some(self.material.clone()),
-            uv_coords: None,
+            uv_coords: Some((u,v)),
         };
-
-        //if not infinite plane, check if in bounds
-        if !self.infinite {
-            //from center to hit
-            let relative_hit = hit_position - self.center;
-
-            let a_normalised = self.span_a.normalised();
-            let b_normalised = self.span_b.normalised();
-
-            //calculate only span_a / only span_b "component" of hit vector
-            //if span_b was (0,4) and span_a was (7,0) and hit was (3, 2)
-            //then, hit_on_span_a = (3,2) - (0,1) * 2 = (3,0)
-            //then, hit_on_span_b = (3,2) - (1,0) * 3 = (0,2)
-            // see vector_in_plane.ggb (geogebra)
-            let hit_on_span_a = relative_hit - b_normalised * (relative_hit.dot(b_normalised));
-            let hit_on_span_b = relative_hit - a_normalised * (relative_hit.dot(a_normalised));
-
-            //len squared saves us a sqrt() -> faster
-            //also lets us handle + and - direction (because centered)
-            let len_span_a = self.span_a.len_squared();
-            let len_span_b = self.span_b.len_squared();
-
-            //hit outside
-            if hit_on_span_a.len_squared() > len_span_a || hit_on_span_b.len_squared() > len_span_b
-            {
-                return None;
-            }
-        }
 
         Some(result)
     }
@@ -216,6 +226,7 @@ impl Hit for Plane {
     }
 }
 
+/// represents a triangle in 3d space
 #[derive(Clone)]
 pub struct Triangle {
     // +
@@ -224,9 +235,13 @@ pub struct Triangle {
     // |     \
     // *--a-->+
     // normal = a x b
+    /// the position of a corner or the triangle
     pub center: Vec3,
+    /// a vector pointing from center to another corner of the triangle
     pub span_a: Vec3,
+    /// a vector pointing from center to another corner of the triangle
     pub span_b: Vec3,
+    /// the material (color, etc) of the triangle
     pub material: Arc<Material>,
 }
 

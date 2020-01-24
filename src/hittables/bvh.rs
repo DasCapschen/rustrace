@@ -19,16 +19,21 @@ struct Node {
 }
 */
 
+/// A Node of the Bounding Volume Hierarchy Tree
 #[derive(Clone)]
 pub struct BvhNode {
+    /// the bounding box of this node
     bb: AABB,
+    /// the actual object if leaf, else None
     hittable: Option<Arc<dyn Hit>>,
+    /// the left child node, if any
     left: Option<Box<BvhNode>>,
+    /// the right child node, if any
     right: Option<Box<BvhNode>>,
 }
 
 impl BvhNode {
-    // this is recursive!
+    /// transforms a list of hittables into a bvh tree, returning the root node
     pub fn from_hittables(list: &[Arc<dyn Hit>]) -> Option<BvhNode> {
         //if empty list, return nothing
         if list.is_empty() {

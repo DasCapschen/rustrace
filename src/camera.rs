@@ -1,18 +1,34 @@
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
+/// implements a camera from which to render from
 #[derive(Debug, Copy, Clone)]
 pub struct Camera {
+    /// position in 3d space
     pub position: Vec3,
+    /// the direction the camera is looking in (normalised)
     pub direction: Vec3,
+    /// the horizontal field of view
     fov: f64,
+    /// the width of the rendered image
     width: i32,
+    /// the height of the rendered image
     height: i32,
+    /// the distance at which the camera focuses (only if aperture > 0)
     focus_dist: f64,
+    /// the aperture of the camera, bigger number leads to more "depth of field" (blurryness)
     aperture: f64,
 }
 
 impl Camera {
+    /// Returns a new Camera with the specified parameters
+    /// # Arguments
+    /// * `position` - position in 3d space
+    /// * `direction` - the direction the camera is looking in
+    /// * `width` - the width of the rendered image
+    /// * `height` - the height of the rendered image
+    /// * `focus_dist` - the distance at which the camera focuses (only if aperture > 0)
+    /// * `aperture` - the aperture of the camera, bigger number leads to more "depth of field" (blurryness)
     pub fn new(
         position: Vec3,
         direction: Vec3,
@@ -33,10 +49,12 @@ impl Camera {
         }
     }
 
+    /// returns the forward vector (direction the camera is looking)
     pub fn forward(&self) -> Vec3 {
         self.direction.normalised()
     }
 
+    /// returns the vector pointing to the right of the cameras look-direction
     pub fn right(&self) -> Vec3 {
         const GLOBAL_UP: Vec3 = Vec3 {
             x: 0.0,
@@ -47,10 +65,12 @@ impl Camera {
         GLOBAL_UP.cross(self.forward()).normalised()
     }
 
+    /// returns the vector pointing upwards of the cameras look-direction
     pub fn up(&self) -> Vec3 {
         self.forward().cross(self.right()).normalised()
     }
 
+    /// gets a new ray from the camera at the screen coordinates x and y
     pub fn get_ray(&self, x: f64, y: f64) -> Ray {
         //yes, this is very verbose on purpose, I know it can be optimised
         //but tbh, the compiler probably does that for us
