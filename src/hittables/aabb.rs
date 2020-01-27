@@ -46,58 +46,41 @@ impl AABB {
 }
 
 impl Hit for AABB {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, mut t_min: f64, mut t_max: f64) -> Option<HitResult> {
         //calculate intersection on YZ-plane
-        let mut t0_x = (self.start.x - ray.origin.x) / ray.direction.x;
-        let mut t1_x = (self.end.x - ray.origin.x) / ray.direction.x;
+        //if direction.x is 0, because we're using floats, result is `inf`
+        let t0 = (self.start.x - ray.origin.x) / ray.direction.x;
+        let t1 = (self.end.x - ray.origin.x) / ray.direction.x;
 
-        //if direction is negative, gotta swap because t1 is supposed to be the bigger one
-        if ray.direction.x < 0.0 {
-            swap(&mut t0_x, &mut t1_x);
-        }
+        //limit tmin and tmax to the found interval.
+        //if direction was negative, t0.min(t1) will swap the t's
+        //note that Rusts impl of max/min NEVER returns NaN
+        t_min = t_min.max( t0.min(t1) );
+        t_max = t_max.min( t1.max(t0) );
 
         //calculate intersection on XZ-plane
-        let mut t0_y = (self.start.y - ray.origin.y) / ray.direction.y;
-        let mut t1_y = (self.end.y - ray.origin.y) / ray.direction.y;
+        let t0 = (self.start.y - ray.origin.y) / ray.direction.y;
+        let t1 = (self.end.y - ray.origin.y) / ray.direction.y;
 
-        //if direction is negative, gotta swap because t1 is supposed to be the bigger one
-        if ray.direction.y < 0.0 {
-            swap(&mut t0_y, &mut t1_y);
-        }
+        //limit to interval
+        t_min = t_min.max( t0.min(t1) );
+        t_max = t_max.min( t1.max(t0) );
 
         //calculate intersection on XY-plane
-        let mut t0_z = (self.start.z - ray.origin.z) / ray.direction.z;
-        let mut t1_z = (self.end.z - ray.origin.z) / ray.direction.z;
+        let mut t0 = (self.start.z - ray.origin.z) / ray.direction.z;
+        let mut t1 = (self.end.z - ray.origin.z) / ray.direction.z;
 
-        //if direction is negative, gotta swap because t1 is supposed to be the bigger one
-        if ray.direction.z < 0.0 {
-            swap(&mut t0_z, &mut t1_z);
-        }
+        //limit to interval
+        t_min = t_min.max( t0.min(t1) );
+        t_max = t_max.min( t1.max(t0) );
 
-        //limit our hit interval to x-hits
-        //if we are completely inside the AABB, then no change occurs here
-        //otherwise limit to found hits, to make sure subsequent hits overlap this one
-        let t_min = if t0_x > t_min { t0_x } else { t_min };
-        let t_max = if t1_x < t_max { t1_x } else { t_max };
-
-        //limit hit interval to xy-hit
-        let t_min = if t0_y > t_min { t0_y } else { t_min };
-        let t_max = if t1_y < t_max { t1_y } else { t_max };
-
-        //check if y-hit overlaps x-hit
-        if t_max < t_min {
-            return None;
-        }
-
-        //limit hit interval to xyz-hit and check if it overlaps xy-hit
-        let t_min = if t0_z > t_min { t0_z } else { t_min };
-        let t_max = if t1_z < t_max { t1_z } else { t_max };
+        //check if we actually hit.
         if t_max < t_min {
             return None;
         }
 
         Some(HitResult {
-            ray_param: t_max,
+            ray_param: t_max, //return the BACK side!
             hit_position: ray.origin + t_max * ray.origin,
             normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?
             material: None,
