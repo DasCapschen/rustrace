@@ -56,9 +56,9 @@ fn main() {
 
     //create a 10x10x10 cube of spheres with colorful colors
 
-    for x in 0..10u8 {
-        for y in 0..10u8 {
-            for z in 0..10u8 {
+    for x in -10..10i8 {
+        for y in -10..10i8 {
+            for z in -10..10i8 {
                 let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
                 let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
                 let b = (z as f32 * (220.0 / 10.0) + 10.0) as u8;

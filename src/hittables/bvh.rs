@@ -31,15 +31,15 @@ struct BvhNode {
 
 impl BvhTree {
     pub fn from_hittables(list: Vec<Arc<dyn Hit>>) -> Self {
-        //clone the slice we got so we can sort it!        
+        //clone the slice we got so we can sort it!
         let mut tree = BvhTree {
             nodes: vec![],
             objects: vec![],
         };
 
-        tree.nodes.push(BvhNode{
+        tree.nodes.push(BvhNode {
             bb: list.bounding_box().unwrap(),
-            left: 0, 
+            left: 0,
             count: 0,
         });
         tree.build_subtree(0, list);
@@ -65,7 +65,7 @@ impl BvhTree {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 1;
-            },
+            }
             2 => {
                 let left = self.objects.len() as u32;
 
@@ -74,29 +74,29 @@ impl BvhTree {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 2;
-            },
+            }
             _ => {
                 let left = self.nodes.len() as u32;
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 0;
 
-                let right_list = list.split_off(list.len()/2);
+                let right_list = list.split_off(list.len() / 2);
 
-                self.nodes.push(BvhNode{
+                self.nodes.push(BvhNode {
                     bb: list.bounding_box().unwrap(),
-                    left: 0, 
+                    left: 0,
                     count: 0,
                 });
 
-                self.nodes.push(BvhNode{
+                self.nodes.push(BvhNode {
                     bb: right_list.bounding_box().unwrap(),
-                    left: 0, 
+                    left: 0,
                     count: 0,
                 });
 
                 self.build_subtree(left, list);
-                self.build_subtree(left+1, right_list);
+                self.build_subtree(left + 1, right_list);
             }
         }
     }
@@ -118,14 +118,18 @@ impl BvhTree {
             let (left_hit, right_hit) = match node.count {
                 0 => {
                     //recurse further
-                    (self.hit_node(node.left, ray, t_min, t_max),
-                    self.hit_node(node.left+1, ray, t_min, t_max))
-                },
+                    (
+                        self.hit_node(node.left, ray, t_min, t_max),
+                        self.hit_node(node.left + 1, ray, t_min, t_max),
+                    )
+                }
                 2 => {
                     //hit children only
-                    (self.objects[node.left as usize].hit(ray, t_min, t_max),
-                    self.objects[(node.left+1) as usize].hit(ray, t_min, t_max))
-                },
+                    (
+                        self.objects[node.left as usize].hit(ray, t_min, t_max),
+                        self.objects[(node.left + 1) as usize].hit(ray, t_min, t_max),
+                    )
+                }
                 _ => unreachable!(),
             };
 
@@ -136,7 +140,7 @@ impl BvhTree {
                     } else {
                         Some(rh)
                     }
-                },
+                }
                 (Some(lh), None) => Some(lh),
                 (None, Some(rh)) => Some(rh),
                 _ => None,
