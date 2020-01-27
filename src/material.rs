@@ -3,19 +3,19 @@ use rand::Rng;
 use std::sync::Arc;
 
 use crate::hit::HitResult;
+use crate::onb::ONB;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use crate::onb::ONB;
 
 use Metallic::Metal;
 
-/* 
+/*
 TODO: refactor Material to trait?
 
 TODO: refactor the "scatter" method, break it into subfunctions and implement it properly!
 */
 
-/* 
+/*
     http://www.codinglabs.net/article_physically_based_rendering.aspx
     http://www.codinglabs.net/article_physically_based_rendering_cook_torrance.aspx
     https://stackoverflow.com/questions/36401272/how-to-implement-a-metallic-workflow-in-pbr
@@ -109,7 +109,7 @@ impl Material {
 
         // lambertian scattering pdf is cos(theta)/pi
 
-        let cosine = normal.dot( scattered_ray.direction.normalised() );
+        let cosine = normal.dot(scattered_ray.direction.normalised());
         if cosine < 0.0 {
             0.0
         } else {
@@ -128,7 +128,7 @@ impl Material {
         //lambert
         //randomly choose a vector in hemisphere above hit with pdf cos(theta)/pi
         //(choosing in hemisphere would be 1/2pi)
-        let direction = ONB::from_w(normal).to_local( Vec3::random_cosine_direction() );
+        let direction = ONB::from_w(normal).to_local(Vec3::random_cosine_direction());
         let albedo = self.albedo.texture(uv_coords);
 
         //we generated the direction randomly with cos(t)/pi, so return that as our used pdf
@@ -200,8 +200,7 @@ impl Material {
 
             // transform from tangent to world space
             ONB::from_w(normal).to_local(img_normal)
-        }
-        else {
+        } else {
             normal
         }
     }

@@ -1,7 +1,6 @@
 use crate::hit::{Hit, HitResult};
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use std::mem::swap;
 
 /// Implements an Axis-Aligned Bounding-Box
 #[derive(Debug, Copy, Clone)]
@@ -55,24 +54,24 @@ impl Hit for AABB {
         //limit tmin and tmax to the found interval.
         //if direction was negative, t0.min(t1) will swap the t's
         //note that Rusts impl of max/min NEVER returns NaN
-        t_min = t_min.max( t0.min(t1) );
-        t_max = t_max.min( t1.max(t0) );
+        t_min = t_min.max(t0.min(t1));
+        t_max = t_max.min(t1.max(t0));
 
         //calculate intersection on XZ-plane
         let t0 = (self.start.y - ray.origin.y) / ray.direction.y;
         let t1 = (self.end.y - ray.origin.y) / ray.direction.y;
 
         //limit to interval
-        t_min = t_min.max( t0.min(t1) );
-        t_max = t_max.min( t1.max(t0) );
+        t_min = t_min.max(t0.min(t1));
+        t_max = t_max.min(t1.max(t0));
 
         //calculate intersection on XY-plane
-        let mut t0 = (self.start.z - ray.origin.z) / ray.direction.z;
-        let mut t1 = (self.end.z - ray.origin.z) / ray.direction.z;
+        let t0 = (self.start.z - ray.origin.z) / ray.direction.z;
+        let t1 = (self.end.z - ray.origin.z) / ray.direction.z;
 
         //limit to interval
-        t_min = t_min.max( t0.min(t1) );
-        t_max = t_max.min( t1.max(t0) );
+        t_min = t_min.max(t0.min(t1));
+        t_max = t_max.min(t1.max(t0));
 
         //check if we actually hit.
         if t_max < t_min {

@@ -5,7 +5,7 @@ use sdl2::keyboard::Keycode;
 use crate::hittables::primitives::{Plane, Sphere};
 use crate::material::{Material, Metallic};
 use crate::renderer::Renderer;
-use crate::texture::{ConstantTexture, CheckeredTexture, ImageTexture};
+use crate::texture::{CheckeredTexture, ConstantTexture, ImageTexture};
 use crate::vec3::Vec3;
 
 use std::sync::Arc;
@@ -15,11 +15,11 @@ use scoped_threadpool::Pool;
 
 mod camera;
 mod material;
+mod onb;
 mod ray;
 mod renderer;
 mod texture;
 mod vec3;
-mod onb;
 
 mod hit;
 mod hittables {
@@ -55,7 +55,7 @@ fn main() {
     let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 64, skybox);
 
     //create a 10x10x10 cube of spheres with colorful colors
-    
+
     for x in 0..25u8 {
         for y in 0..25u8 {
             for z in 0..10u8 {
@@ -75,7 +75,6 @@ fn main() {
             }
         }
     }
-    
 
     /*
     let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -111,7 +110,7 @@ fn main() {
     let start = SystemTime::now();
     renderer.finalise();
     let end = SystemTime::now();
-    println!("Finalising took {:?}", end.duration_since(start).unwrap() );
+    println!("Finalising took {:?}", end.duration_since(start).unwrap());
 
     let mut pool = Pool::new(8);
 

@@ -168,10 +168,10 @@ impl Vec3 {
         // x = sin(theta)*cos(phi)
         // y = sin(theta)*sin(phi)
         // z = cos(theta)
-        // now do some integration and move stuff around... 
+        // now do some integration and move stuff around...
         // (see https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html#generatingrandomdirections)
 
-        let z = (1.0-r2).sqrt(); // cos(theta)
+        let z = (1.0 - r2).sqrt(); // cos(theta)
         let sin_theta = r2.sqrt(); // because sin² + cos² = 1
 
         let phi = 2.0 * std::f64::consts::PI * r1;

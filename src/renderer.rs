@@ -96,7 +96,8 @@ impl Renderer {
                         (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
-                    let (color, albedo, normal) = self.trace_color(&ray, self.bvh.as_ref().expect("did not call finalise()!"));
+                    let (color, albedo, normal) = self
+                        .trace_color(&ray, self.bvh.as_ref().expect("did not call finalise()!"));
 
                     final_color += color;
 
