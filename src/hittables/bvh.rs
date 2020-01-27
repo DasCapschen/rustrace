@@ -6,128 +6,157 @@ use crate::vec3::Vec3;
 use std::sync::Arc;
 
 /*
-I feel like this whole class needs a refactoring. I mean it works, but I don't like it.
-We should try to be idiomatic and do it like
-
-struct Tree {
-    nodes: Vec<Node>,
-}
-struct Node {
-    hittable: Arc<dyn Hit>,
-    left: Option<usize>,
-    right: Option<usize>
-}
+    This is more idiomatic, but it increases rendering time.
+    We should probably try to have some order in the nodes vector.
+    Right now it's kind of random...
 */
+
+#[derive(Clone)]
+pub struct BvhTree {
+    //root is always 0
+    nodes: Vec<BvhNode>,
+    objects: Vec<Arc<dyn Hit>>,
+}
 
 /// A Node of the Bounding Volume Hierarchy Tree
 #[derive(Clone)]
-pub struct BvhNode {
+struct BvhNode {
     /// the bounding box of this node
-    bb: AABB,
-    /// the actual object if leaf, else None
-    hittable: Option<Arc<dyn Hit>>,
-    /// the left child node, if any
-    left: Option<Box<BvhNode>>,
-    /// the right child node, if any
-    right: Option<Box<BvhNode>>,
+    bb: AABB, //24b
+    /// the index of the left child (right is this +1)
+    left: u32, //4b
+    /// if leaf, amount of objects, else 0
+    count: u32, //4b
 }
 
-impl BvhNode {
-    /// transforms a list of hittables into a bvh tree, returning the root node
-    pub fn from_hittables(list: &[Arc<dyn Hit>]) -> Option<BvhNode> {
-        //if empty list, return nothing
-        if list.is_empty() {
-            None
+impl BvhTree {
+    pub fn from_hittables(list: Vec<Arc<dyn Hit>>) -> Self {
+        //clone the slice we got so we can sort it!        
+        let mut tree = BvhTree {
+            nodes: vec![],
+            objects: vec![],
+        };
+
+        tree.nodes.push(BvhNode{
+            bb: list.bounding_box().unwrap(),
+            left: 0, 
+            count: 0,
+        });
+        tree.build_subtree(0, list);
+
+        tree
+    }
+
+    fn build_subtree(&mut self, index: u32, mut list: Vec<Arc<dyn Hit>>) {
+        //sort list along some (random) axis
+        let i: u32 = rand::random::<u32>() % 3;
+        match i {
+            0 => list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
+            1 => list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
+            2 => list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
+            _ => unreachable!(),
         }
-        //if list is 1 element
-        else if list.len() == 1 {
-            Some(BvhNode {
-                bb: list[0].bounding_box().unwrap(),
-                hittable: Some(list[0].clone()),
-                left: None,
-                right: None,
-            })
-        } else {
-            //clone the slice we got so we can sort it!
-            //IDEA: pass a mutable slice?
-            let mut sorted_list: Vec<_> = Vec::from(list);
 
-            //sort it along some (random) axis
-            let i: u32 = rand::random::<u32>() % 3;
-            match i {
-                0 => sorted_list
-                    .sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
-                1 => sorted_list
-                    .sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
-                2 => sorted_list
-                    .sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
-                _ => unreachable!(),
+        match list.len() {
+            0 => panic!("plz no empty list thx"),
+            1 => {
+                let left = self.objects.len() as u32;
+                self.objects.push(list.remove(0));
+
+                self.nodes[index as usize].left = left;
+                self.nodes[index as usize].count = 1;
+            },
+            2 => {
+                let left = self.objects.len() as u32;
+
+                self.objects.push(list.remove(0));
+                self.objects.push(list.remove(0));
+
+                self.nodes[index as usize].left = left;
+                self.nodes[index as usize].count = 2;
+            },
+            _ => {
+                let left = self.nodes.len() as u32;
+
+                self.nodes[index as usize].left = left;
+                self.nodes[index as usize].count = 0;
+
+                let right_list = list.split_off(list.len()/2);
+
+                self.nodes.push(BvhNode{
+                    bb: list.bounding_box().unwrap(),
+                    left: 0, 
+                    count: 0,
+                });
+
+                self.nodes.push(BvhNode{
+                    bb: right_list.bounding_box().unwrap(),
+                    left: 0, 
+                    count: 0,
+                });
+
+                self.build_subtree(left, list);
+                self.build_subtree(left+1, right_list);
             }
-
-            //split it along that axis into 2
-            let left_node = match BvhNode::from_hittables(&sorted_list[..sorted_list.len() / 2]) {
-                Some(node) => Some(Box::new(node)),
-                None => None,
-            };
-            let right_node = match BvhNode::from_hittables(&sorted_list[sorted_list.len() / 2..]) {
-                Some(node) => Some(Box::new(node)),
-                None => None,
-            };
-
-            Some(BvhNode {
-                bb: sorted_list.bounding_box().unwrap(),
-                hittable: None,
-                left: left_node,
-                right: right_node,
-            })
         }
     }
-}
 
-impl Hit for BvhNode {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+    fn hit_node(&self, idx: u32, ray: &Ray, t_min: f32, mut t_max: f32) -> Option<HitResult> {
+        let node = &self.nodes[idx as usize];
+
         //only proceed if the bounding box was hit
-        if let Some(hr) = self.bb.hit(ray, t_min, t_max) {
+        if let Some(hr) = node.bb.hit(ray, t_min, t_max) {
             //limit t_max, we cannot hit anything *behind* the current hit!
             //aabb returns the *backside* of it, *not* the front
-            let t_max = hr.ray_param;
+            t_max = hr.ray_param;
 
-            //if we are a hittable (-> leaf), trace it!
-            if let Some(h) = &self.hittable {
-                return h.hit(ray, t_min, t_max);
+            //early stop if single leaf
+            if node.count == 1 {
+                return self.objects[node.left as usize].hit(ray, t_min, t_max);
             }
 
-            //otherwise, check left and right children
-            let left_hit = match &self.left {
-                Some(node) => node.hit(ray, t_min, t_max),
-                None => None,
-            };
-            let right_hit = match &self.right {
-                Some(node) => node.hit(ray, t_min, t_max),
-                None => None,
+            let (left_hit, right_hit) = match node.count {
+                0 => {
+                    //recurse further
+                    (self.hit_node(node.left, ray, t_min, t_max),
+                    self.hit_node(node.left+1, ray, t_min, t_max))
+                },
+                2 => {
+                    //hit children only
+                    (self.objects[node.left as usize].hit(ray, t_min, t_max),
+                    self.objects[(node.left+1) as usize].hit(ray, t_min, t_max))
+                },
+                _ => unreachable!(),
             };
 
             match (left_hit, right_hit) {
                 (Some(lh), Some(rh)) => {
                     if lh.ray_param < rh.ray_param {
-                        return Some(lh);
+                        Some(lh)
                     } else {
-                        return Some(rh);
+                        Some(rh)
                     }
-                }
-                (Some(lh), None) => return Some(lh),
-                (None, Some(rh)) => return Some(rh),
-                (None, None) => return None,
+                },
+                (Some(lh), None) => Some(lh),
+                (None, Some(rh)) => Some(rh),
+                _ => None,
             }
+        } else {
+            None
         }
-        None
+    }
+}
+
+impl Hit for BvhTree {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+        self.hit_node(0, ray, t_min, t_max)
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        Some(self.bb)
+        Some(self.nodes[0].bb)
     }
 
     fn center(&self) -> Vec3 {
-        todo!()
+        self.nodes[0].bb.center()
     }
 }

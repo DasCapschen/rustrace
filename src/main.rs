@@ -56,8 +56,8 @@ fn main() {
 
     //create a 10x10x10 cube of spheres with colorful colors
 
-    for x in 0..25u8 {
-        for y in 0..25u8 {
+    for x in 0..10u8 {
+        for y in 0..10u8 {
             for z in 0..10u8 {
                 let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
                 let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
@@ -108,7 +108,9 @@ fn main() {
 
     //creates bvh and leaves the renderer immutable
     let start = SystemTime::now();
-    renderer.finalise();
+
+    let mut renderer = renderer.finalise(); //finalise builds bvh and flushes scene!
+
     let end = SystemTime::now();
     println!("Finalising took {:?}", end.duration_since(start).unwrap());
 

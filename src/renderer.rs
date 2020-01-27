@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::camera::Camera;
 use crate::hit::Hit;
-use crate::hittables::bvh::BvhNode;
+use crate::hittables::bvh::BvhTree;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
@@ -16,7 +16,7 @@ pub struct Renderer {
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
-    bvh: Option<BvhNode>,
+    bvh: Option<BvhTree>,
 }
 
 impl Renderer {
@@ -46,9 +46,13 @@ impl Renderer {
 
     //TODO: make it so that finalise leaves renderer immutable?
     //-> builder pattern?
-    pub fn finalise(&mut self) {
-        //build the bvh from our objects
-        self.bvh = BvhNode::from_hittables(&self.objects[..]);
+    pub fn finalise(mut self) -> Self {
+        //build the bvh from our objects (MOVED!!!)
+        self.bvh = Some(BvhTree::from_hittables(self.objects));
+
+        //replace moved value with new empty value
+        self.objects = vec![];
+        self
     }
 
     fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
