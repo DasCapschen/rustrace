@@ -7,15 +7,15 @@ use crate::vec3::Vec3;
 
 #[derive(Clone)]
 pub struct HitResult {
-    pub ray_param: f64,
+    pub ray_param: f32,
     pub hit_position: Vec3,
     pub normal: Vec3,
     pub material: Option<Arc<Material>>,
-    pub uv_coords: Option<(f64, f64)>,
+    pub uv_coords: Option<(f32, f32)>,
 }
 
 pub trait Hit: Send + Sync {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult>;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult>;
     fn bounding_box(&self) -> Option<AABB>;
     fn center(&self) -> Vec3;
 }
@@ -23,7 +23,7 @@ pub trait Hit: Send + Sync {
 // hit a list of any hittables
 // useful for hitting world (all objects) in renderer
 impl Hit for Vec<Arc<dyn Hit>> {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;
 
@@ -76,7 +76,7 @@ impl Hit for Vec<Arc<dyn Hit>> {
 }
 
 impl Hit for [Arc<dyn Hit>] {
-    fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
+    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitResult> {
         None
     }
 
@@ -111,7 +111,7 @@ impl<T> Hit for Vec<T>
 where
     T: Hit,
 {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;
 

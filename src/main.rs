@@ -59,16 +59,16 @@ fn main() {
     for x in 0..25u8 {
         for y in 0..25u8 {
             for z in 0..10u8 {
-                let r = (x as f64 * (220.0 / 10.0) + 10.0) as u8;
-                let g = (y as f64 * (220.0 / 10.0) + 10.0) as u8;
-                let b = (z as f64 * (220.0 / 10.0) + 10.0) as u8;
+                let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
+                let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
+                let b = (z as f32 * (220.0 / 10.0) + 10.0) as u8;
 
                 let color = Arc::new(ConstantTexture::new(Vec3::rgb(r, g, b)));
                 let metallic = Metallic::NonMetal;
                 let refraction = None;
 
                 renderer.add_object(Arc::new(Sphere {
-                    center: 1.5 * Vec3::new(x as f64, y as f64, z as f64),
+                    center: 1.5 * Vec3::new(x as f32, y as f32, z as f32),
                     radius: 0.5,
                     material: Arc::new(Material::new(color, None, metallic, refraction)),
                 }));
@@ -136,8 +136,8 @@ fn main() {
                     ..
                 } => break 'running,
                 /*Event::MouseMotion { xrel, yrel, .. } => {
-                    let dx = xrel as f64 / WIDTH as f64;
-                    let dy = yrel as f64 / HEIGHT as f64;
+                    let dx = xrel as f32 / WIDTH as f32;
+                    let dy = yrel as f32 / HEIGHT as f32;
                     //this allows rotation in the positive half-space!
                     renderer.camera.direction += Vec3::new(dx, -dy, 0.0);
                 }*/

@@ -9,15 +9,15 @@ pub struct Camera {
     /// the direction the camera is looking in (normalised)
     pub direction: Vec3,
     /// the horizontal field of view
-    fov: f64,
+    fov: f32,
     /// the width of the rendered image
     width: i32,
     /// the height of the rendered image
     height: i32,
     /// the distance at which the camera focuses (only if aperture > 0)
-    focus_dist: f64,
+    focus_dist: f32,
     /// the aperture of the camera, bigger number leads to more "depth of field" (blurryness)
-    aperture: f64,
+    aperture: f32,
 }
 
 impl Camera {
@@ -32,11 +32,11 @@ impl Camera {
     pub fn new(
         position: Vec3,
         direction: Vec3,
-        fov: f64,
+        fov: f32,
         width: i32,
         height: i32,
-        focus_dist: f64,
-        aperture: f64,
+        focus_dist: f32,
+        aperture: f32,
     ) -> Self {
         Camera {
             position,
@@ -71,7 +71,7 @@ impl Camera {
     }
 
     /// gets a new ray from the camera at the screen coordinates x and y
-    pub fn get_ray(&self, x: f64, y: f64) -> Ray {
+    pub fn get_ray(&self, x: f32, y: f32) -> Ray {
         //yes, this is very verbose on purpose, I know it can be optimised
         //but tbh, the compiler probably does that for us
 
@@ -95,7 +95,7 @@ impl Camera {
         let focal_width = 2.0 * (self.fov / 2.0).to_radians().tan() * self.focus_dist;
 
         //figure out by how much we have to scale real_width and real_height to arrive at focal_width / focal_height
-        let scale = focal_width / self.width as f64;
+        let scale = focal_width / self.width as f32;
 
         //HINT: no need to scale by aspect ratio because x and y don't go between 0..1, but 0..width / 0..height!
         //else it would be:
@@ -112,8 +112,8 @@ impl Camera {
 
         //position of the pixel on our "screen" in world space
         let pixel_pos = center
-            + (x - (self.width / 2) as f64) * right //this is where real_width is scaled down to focal_width
-            + (y - (self.height / 2) as f64) * up;
+            + (x - (self.width / 2) as f32) * right //this is where real_width is scaled down to focal_width
+            + (y - (self.height / 2) as f32) * up;
 
         let lens_pos = Vec3::random_in_unit_disk() * (self.aperture / 2.0); //aperture/2 == lens radius
         let start = self.position + lens_pos; //start ray at random point in "lens"

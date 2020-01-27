@@ -36,7 +36,7 @@ enum Shape {
 }
 
 struct Sphere{
-    radius: f64
+    radius: f32
 }
 
 struct Plane {
@@ -58,13 +58,13 @@ pub struct Sphere {
     /// the center (or position) of the sphere
     pub center: Vec3,
     /// the radius of the sphere
-    pub radius: f64,
+    pub radius: f32,
     /// the material (color, etc) of the sphere
     pub material: Arc<Material>,
 }
 
 impl Hit for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         // x² + y² + z² = radius  | sphere at 0,0,0
         // (x-c_x)² + (y-c_y)² + (z-c_z)² = radius | sphere at c
         // => (p-c)² == (p-c)·(p-c) = radius  | dot product!
@@ -99,11 +99,11 @@ impl Hit for Sphere {
             let normal = (hit_position - self.center) / self.radius;
 
             let u = 1.0
-                - ((normal.z.atan2(normal.x) + std::f64::consts::PI)
-                    / (2.0 * std::f64::consts::PI));
+                - ((normal.z.atan2(normal.x) + std::f32::consts::PI)
+                    / (2.0 * std::f32::consts::PI));
 
             //negative because our y axis (image) is flipped
-            let v = ((-normal.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
+            let v = ((-normal.y).asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
 
             Some(HitResult {
                 ray_param: t,
@@ -152,7 +152,7 @@ pub struct Plane {
 }
 
 impl Hit for Plane {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         // (x - center) · normal = 0
         // x => ray  x(t) = origin + t * direction
         // (origin + t * direction - center) · normal = 0
@@ -247,7 +247,7 @@ pub struct Triangle {
 }
 
 impl Hit for Triangle {
-    fn hit(&self, _ray: &Ray, _t_min: f64, _t_max: f64) -> Option<HitResult> {
+    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitResult> {
         None
     }
 

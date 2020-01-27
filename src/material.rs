@@ -62,7 +62,7 @@ pub struct Material {
     pub albedo: Arc<dyn Texture>,
     normalmap: Option<Arc<dyn Texture>>,
     metallic: Metallic,
-    refraction: Option<f64>,
+    refraction: Option<f32>,
 }
 
 #[derive(Clone)]
@@ -88,7 +88,7 @@ impl Material {
         albedo: Arc<dyn Texture>,
         normalmap: Option<Arc<dyn Texture>>,
         metallic: Metallic,
-        refraction: Option<f64>,
+        refraction: Option<f32>,
     ) -> Self {
         Material {
             albedo,
@@ -103,7 +103,7 @@ impl Material {
     }
 
     // s(direction) -> directional distribution when light scatters
-    pub fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f64 {
+    pub fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
         let uv_coords = hit.uv_coords.unwrap();
         let normal = self.map_normal(hit.normal, uv_coords);
 
@@ -113,14 +113,14 @@ impl Material {
         if cosine < 0.0 {
             0.0
         } else {
-            cosine / std::f64::consts::PI
+            cosine / std::f32::consts::PI
         }
     }
 
     /// Returns Option<Tuple (Attenuation, Normal, Scattered Ray, PDF)>
     /// the pdf here is p(direction) ; the pdf of how we generate the random direction of the scattered ray
     /// this is the pdf we use to approximate the integral, while the scattering_pdf is like the BRDF
-    pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f64)> {
+    pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         let uv_coords = hit.uv_coords.unwrap();
 
         let normal = self.map_normal(hit.normal, uv_coords);
@@ -132,7 +132,7 @@ impl Material {
         let albedo = self.albedo.texture(uv_coords);
 
         //we generated the direction randomly with cos(t)/pi, so return that as our used pdf
-        let pdf = normal.dot(direction) / std::f64::consts::PI;
+        let pdf = normal.dot(direction) / std::f32::consts::PI;
 
         //metallic path
         /*
@@ -189,7 +189,7 @@ impl Material {
         Some((albedo, normal, scattered, pdf))
     }
 
-    fn map_normal(&self, normal: Vec3, uv_coords: (f64, f64)) -> Vec3 {
+    fn map_normal(&self, normal: Vec3, uv_coords: (f32, f32)) -> Vec3 {
         //calculate new normal from actual normal and normalmap
         if let Some(normalmap) = &self.normalmap {
             // get image normal
@@ -205,7 +205,7 @@ impl Material {
         }
     }
 
-    fn fresnel_schlick(&self, cosine: f64) -> f64 {
+    fn fresnel_schlick(&self, cosine: f32) -> f32 {
         //safe, we don't call this function if we have no refraction
         let refraction = self.refraction.unwrap();
 

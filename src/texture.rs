@@ -10,7 +10,7 @@ TODO: implement filtering
 
 pub trait Texture: Send + Sync {
     /// returns a color as vec3 from UV coordinates
-    fn texture(&self, uv_coords: (f64, f64)) -> Vec3;
+    fn texture(&self, uv_coords: (f32, f32)) -> Vec3;
 }
 
 pub enum TextureFilter {
@@ -28,7 +28,7 @@ impl ConstantTexture {
     }
 }
 impl Texture for ConstantTexture {
-    fn texture(&self, _uv_coords: (f64, f64)) -> Vec3 {
+    fn texture(&self, _uv_coords: (f32, f32)) -> Vec3 {
         self.color
     }
 }
@@ -44,7 +44,7 @@ impl CheckeredTexture {
     }
 }
 impl Texture for CheckeredTexture {
-    fn texture(&self, uv_coords: (f64, f64)) -> Vec3 {
+    fn texture(&self, uv_coords: (f32, f32)) -> Vec3 {
         let (u, v) = uv_coords;
 
         let it = (100.0 * u).sin() * (100.0 * v).sin();
@@ -61,7 +61,7 @@ impl Texture for CheckeredTexture {
 pub struct Perlin;
 impl Perlin {}
 impl Texture for Perlin {
-    fn texture(&self, u: f64, v: f64) -> Vec3 {
+    fn texture(&self, u: f32, v: f32) -> Vec3 {
 
     }
 }
@@ -69,7 +69,7 @@ impl Texture for Perlin {
 
 #[derive(Clone)]
 pub struct ImageTexture {
-    data: ImageBuf<f64, Rgb>,
+    data: ImageBuf<f32, Rgb>,
 }
 impl ImageTexture {
     pub fn new<P: AsRef<Path>>(filepath: P) -> Self {
@@ -82,12 +82,12 @@ impl ImageTexture {
     }
 }
 impl Texture for ImageTexture {
-    fn texture(&self, uv_coords: (f64, f64)) -> Vec3 {
+    fn texture(&self, uv_coords: (f32, f32)) -> Vec3 {
         let (u, v) = uv_coords;
 
         //scale u,v from [0,1] to [0,width) or [0,height)
-        let u = u * (self.data.width() - 1) as f64;
-        let v = v * (self.data.height() - 1) as f64;
+        let u = u * (self.data.width() - 1) as f32;
+        let v = v * (self.data.height() - 1) as f32;
 
         let u_lo = u.floor();
         let u_hi = u.ceil();

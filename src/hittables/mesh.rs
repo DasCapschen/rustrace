@@ -29,7 +29,7 @@ impl Mesh {
 
 //Vec<Hit> implements hittable!
 impl Hit for Mesh {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         //instead of offsetting every face by mesh's position
         //we offset the ray in the opposite direction
         let modified_ray = Ray {

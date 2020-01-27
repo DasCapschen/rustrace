@@ -45,7 +45,7 @@ impl AABB {
 }
 
 impl Hit for AABB {
-    fn hit(&self, ray: &Ray, mut t_min: f64, mut t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, mut t_min: f32, mut t_max: f32) -> Option<HitResult> {
         //calculate intersection on YZ-plane
         //if direction.x is 0, because we're using floats, result is `inf`
         let t0 = (self.start.x - ray.origin.x) / ray.direction.x;

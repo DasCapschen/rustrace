@@ -92,8 +92,8 @@ impl Renderer {
                 //multisample
                 for _ in 0..self.samples {
                     let ray = self.camera.get_ray(
-                        (x + x_offset) as f64 + rng.gen_range(0.0, 1.0),
-                        (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
+                        (x + x_offset) as f32 + rng.gen_range(0.0, 1.0),
+                        (y + y_offset) as f32 + rng.gen_range(0.0, 1.0),
                     );
 
                     let (color, albedo, normal) = self
@@ -107,9 +107,9 @@ impl Renderer {
                 }
 
                 //normalize color after sampling a lot
-                final_color /= self.samples as f64;
-                final_albedo /= self.samples as f64;
-                final_normal /= self.samples as f64;
+                final_color /= self.samples as f32;
+                final_albedo /= self.samples as f32;
+                final_normal /= self.samples as f32;
 
                 self.set_pixel(color_buf, x, y, final_color);
                 self.set_pixel(albedo_buf, x, y, final_albedo);
@@ -134,7 +134,7 @@ impl Renderer {
         // -> 0 + 1*e1 + (a1*s1*(1/pdf1))*e2 + (a1*s1*(1/pdf1))*(a2*s2*(1/pdf2)) ...
         // that's a sum!
 
-        while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
+        while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f32::MAX) {
             if let Some(mat) = &hit.material {
                 //emitted is even added if we do not scatter!
                 let emitted = mat.emitted();
@@ -166,10 +166,10 @@ impl Renderer {
 
         //calculate uv coords from ray direction
         let u = 1.0
-            - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f64::consts::PI)
-                / (2.0 * std::f64::consts::PI));
+            - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f32::consts::PI)
+                / (2.0 * std::f32::consts::PI));
         let v =
-            ((-ray_to_use.direction.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
+            ((-ray_to_use.direction.y).asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
 
         let skycolor = self.sky.texture((u, v));
 

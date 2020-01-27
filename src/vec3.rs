@@ -6,32 +6,32 @@ use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 //auto-implement printing
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 impl Vec3 {
     /// Creates a new vector the given components
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
         Vec3 { x, y, z }
     }
 
     /// Creates a new Vector, converting from 0..255 to 0.0..1.0
     pub fn rgb(r: u8, g: u8, b: u8) -> Self {
         Vec3 {
-            x: r as f64 / 255.0,
-            y: g as f64 / 255.0,
-            z: b as f64 / 255.0,
+            x: r as f32 / 255.0,
+            y: g as f32 / 255.0,
+            z: b as f32 / 255.0,
         }
     }
 
     /// get the length of the vector
-    pub fn len(&self) -> f64 {
+    pub fn len(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
-    pub fn len_squared(&self) -> f64 {
+    pub fn len_squared(&self) -> f32 {
         (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
     }
 
@@ -46,7 +46,7 @@ impl Vec3 {
     }
 
     /// dot product between self and rhs
-    pub fn dot(&self, rhs: Vec3) -> f64 {
+    pub fn dot(&self, rhs: Vec3) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
@@ -77,7 +77,7 @@ impl Vec3 {
         *self - 2.0 * self.dot(normal) * normal
     }
 
-    pub fn refract(&self, normal: Vec3, n_in: f64, n_out: f64) -> Option<Vec3> {
+    pub fn refract(&self, normal: Vec3, n_in: f32, n_out: f32) -> Option<Vec3> {
         //    ＼     n
         //   in ＼   ↑
         //         ↘ |    n_in
@@ -158,8 +158,8 @@ impl Vec3 {
 
     /// calculates a random direction with pdf `p(dir) = cos(theta) / pi` (-> Lambert)
     pub fn random_cosine_direction() -> Vec3 {
-        let r1: f64 = rand::random();
-        let r2: f64 = rand::random();
+        let r1: f32 = rand::random();
+        let r2: f32 = rand::random();
 
         // spherical coordinates -> cartesian
         // we pretend as if z axis was normal vector!
@@ -174,23 +174,23 @@ impl Vec3 {
         let z = (1.0 - r2).sqrt(); // cos(theta)
         let sin_theta = r2.sqrt(); // because sin² + cos² = 1
 
-        let phi = 2.0 * std::f64::consts::PI * r1;
+        let phi = 2.0 * std::f32::consts::PI * r1;
         let x = phi.cos() * sin_theta;
         let y = phi.sin() * sin_theta;
 
         Vec3 { x, y, z }
     }
 
-    pub fn lerp(lhs: Vec3, rhs: Vec3, alpha: f64) -> Vec3 {
+    pub fn lerp(lhs: Vec3, rhs: Vec3, alpha: f32) -> Vec3 {
         (1.0 - alpha) * lhs + alpha * rhs
     }
 }
 
 //multiply vector with scalar
-impl Mul<f64> for Vec3 {
+impl Mul<f32> for Vec3 {
     type Output = Vec3;
 
-    fn mul(self, rhs: f64) -> Self::Output {
+    fn mul(self, rhs: f32) -> Self::Output {
         Vec3 {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -199,8 +199,8 @@ impl Mul<f64> for Vec3 {
     }
 }
 
-impl MulAssign<f64> for Vec3 {
-    fn mul_assign(&mut self, rhs: f64) {
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, rhs: f32) {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;
@@ -208,7 +208,7 @@ impl MulAssign<f64> for Vec3 {
 }
 
 //multiply scalar with vector
-impl Mul<Vec3> for f64 {
+impl Mul<Vec3> for f32 {
     type Output = Vec3;
 
     fn mul(self, rhs: Vec3) -> Self::Output {
@@ -243,10 +243,10 @@ impl MulAssign<Vec3> for Vec3 {
 }
 
 //divide by scalar
-impl Div<f64> for Vec3 {
+impl Div<f32> for Vec3 {
     type Output = Vec3;
 
-    fn div(self, rhs: f64) -> Self::Output {
+    fn div(self, rhs: f32) -> Self::Output {
         Vec3 {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -256,8 +256,8 @@ impl Div<f64> for Vec3 {
 }
 
 //divide by scalar
-impl DivAssign<f64> for Vec3 {
-    fn div_assign(&mut self, rhs: f64) {
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, rhs: f32) {
         self.x /= rhs;
         self.y /= rhs;
         self.z /= rhs;
@@ -340,8 +340,8 @@ impl<'a> Sum<&'a Vec3> for Vec3 {
     }
 }
 
-impl From<&[f64]> for Vec3 {
-    fn from(slice: &[f64]) -> Self {
+impl From<&[f32]> for Vec3 {
+    fn from(slice: &[f32]) -> Self {
         if slice.len() < 3 {
             todo!("handle error");
         }
@@ -383,19 +383,19 @@ mod tests {
 
     #[test]
     fn test_len() {
-        assert!((Vec3::new(3.0, 4.0, 0.0).len() - 5.0).abs() < std::f64::EPSILON)
+        assert!((Vec3::new(3.0, 4.0, 0.0).len() - 5.0).abs() < std::f32::EPSILON)
     }
 
     #[test]
     fn test_len_squared() {
-        assert!((Vec3::new(3.0, 4.0, 0.0).len_squared() - 25.0).abs() < std::f64::EPSILON)
+        assert!((Vec3::new(3.0, 4.0, 0.0).len_squared() - 25.0).abs() < std::f32::EPSILON)
     }
 
     #[test]
     fn test_dot() {
         let u = Vec3::new(1.0, 2.0, 3.0);
         let v = Vec3::new(4.0, -1.0, 0.0);
-        assert!((u.dot(v) - 2.0).abs() < std::f64::EPSILON)
+        assert!((u.dot(v) - 2.0).abs() < std::f32::EPSILON)
     }
 
     #[test]
@@ -458,7 +458,7 @@ mod tests {
         let v = Vec3::new(0.0, -1.0, 4.0);
         let u = Vec3::new(3.0, 2.0, -2.0);
         assert_eq!(v / u, Vec3::new(0.0, -0.5, -2.0));
-        assert_eq!(u / v, Vec3::new(std::f64::INFINITY, -2.0, -0.5)); //oh god why
+        assert_eq!(u / v, Vec3::new(std::f32::INFINITY, -2.0, -0.5)); //oh god why
     }
 
     #[test]

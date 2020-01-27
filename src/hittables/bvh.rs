@@ -85,7 +85,7 @@ impl BvhNode {
 }
 
 impl Hit for BvhNode {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         //only proceed if the bounding box was hit
         if let Some(hr) = self.bb.hit(ray, t_min, t_max) {
             //limit t_max, we cannot hit anything *behind* the current hit!
