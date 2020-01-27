@@ -16,11 +16,12 @@ pub struct Renderer {
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
+    bvh: Option<BvhNode>,
 }
 
 impl Renderer {
     pub fn new(width: i32, height: i32, samples: u8, sky: Arc<dyn Texture>) -> Self {
-        let pos = Vec3::new(-7.0, 20.0, -7.0);
+        let pos = Vec3::new(30.0, 20.0, -30.0);
         let target = Vec3::new(7.5, 5.0, 7.5); //sphere center
         let dir = target - pos;
 
@@ -35,11 +36,19 @@ impl Renderer {
             ),
             objects: Vec::new(),
             sky,
+            bvh: None,
         }
     }
 
     pub fn add_object(&mut self, object: Arc<dyn Hit>) {
         self.objects.push(object);
+    }
+
+    //TODO: make it so that finalise leaves renderer immutable?
+    //-> builder pattern?
+    pub fn finalise(&mut self) {
+        //build the bvh from our objects
+        self.bvh = BvhNode::from_hittables(&self.objects[..]);
     }
 
     fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
@@ -74,8 +83,6 @@ impl Renderer {
         //draw image
         let mut rng = rand::thread_rng();
 
-        let bvh = BvhNode::from_hittables(&self.objects[..]).unwrap();
-
         for x in 0..self.width {
             for y in 0..y_max as i32 {
                 let mut final_color = Vec3::rgb(0, 0, 0);
@@ -89,7 +96,7 @@ impl Renderer {
                         (y + y_offset) as f64 + rng.gen_range(0.0, 1.0),
                     );
 
-                    let (color, albedo, normal) = self.trace_color(&ray, &bvh);
+                    let (color, albedo, normal) = self.trace_color(&ray, self.bvh.as_ref().expect("did not call finalise()!"));
 
                     final_color += color;
 
@@ -115,18 +122,31 @@ impl Renderer {
     fn trace_color(&self, ray: &Ray, object: &dyn Hit) -> (Vec3, Vec3, Vec3) {
         let mut ray_to_use = *ray;
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
+        let mut out_color = Vec3::new(0.0, 0.0, 0.0);
         let mut out_albedo: Option<Vec3> = None;
         let mut out_normal: Option<Vec3> = None;
 
+        // recursively, this was:
+        // return emitted + attenuation * scattering_pdf() * trace_color() / pdf
+        // -> e1 + a1 * s1 * (1/pdf1) * ( e2 + a2 * s2 * (1/pdf2) * (...) )
+        // -> 1 * (...)
+        // -> 0 + 1*e1 + (a1*s1*(1/pdf1))*e2 + (a1*s1*(1/pdf1))*(a2*s2*(1/pdf2)) ...
+        // that's a sum!
+
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f64::MAX) {
             if let Some(mat) = &hit.material {
-                if let Some((attenuation, normal, scattered_ray)) = mat.scatter(&ray_to_use, &hit) {
+                //emitted is even added if we do not scatter!
+                let emitted = mat.emitted();
+                out_color += final_attenuation * emitted;
+
+                if let Some((albedo, normal, scattered_ray, pdf)) = mat.scatter(&ray_to_use, &hit) {
+                    let brdf = albedo * mat.scattering_pdf(&ray, &hit, &scattered_ray);
+                    final_attenuation *= brdf / pdf;
                     ray_to_use = scattered_ray;
-                    final_attenuation = final_attenuation * attenuation;
 
                     //remember albedo and normal for the first object hit
                     if out_albedo.is_none() {
-                        out_albedo = Some(attenuation);
+                        out_albedo = Some(albedo);
                     }
                     if out_normal.is_none() {
                         out_normal = Some(normal);
@@ -134,6 +154,7 @@ impl Renderer {
                     continue;
                 }
             }
+
             if out_normal.is_none() {
                 out_normal = Some(hit.normal);
             }
@@ -150,14 +171,15 @@ impl Renderer {
             ((-ray_to_use.direction.y).asin() + std::f64::consts::FRAC_PI_2) / std::f64::consts::PI;
 
         let skycolor = self.sky.texture((u, v));
+
         if out_albedo.is_none() {
             out_albedo = Some(skycolor)
         }
         if out_normal.is_none() {
-            out_normal = Some(Vec3::new(0.0, 0.0, 0.0))
+            out_normal = Some(-ray_to_use.direction.normalised())
         }
 
-        let color = skycolor * final_attenuation;
-        (color, out_albedo.unwrap(), out_normal.unwrap())
+        out_color += skycolor * final_attenuation;
+        (out_color, out_albedo.unwrap(), out_normal.unwrap())
     }
 }

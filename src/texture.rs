@@ -47,7 +47,7 @@ impl Texture for CheckeredTexture {
     fn texture(&self, uv_coords: (f64, f64)) -> Vec3 {
         let (u, v) = uv_coords;
 
-        let it = (10.0 * u).sin() * (10.0 * v).sin();
+        let it = (100.0 * u).sin() * (100.0 * v).sin();
         if it < 0.0 {
             self.texture1.texture(uv_coords)
         } else {

@@ -156,6 +156,31 @@ impl Vec3 {
         random_dir
     }
 
+    /// calculates a random direction with pdf `p(dir) = cos(theta) / pi` (-> Lambert)
+    pub fn random_cosine_direction() -> Vec3 {
+        let r1: f64 = rand::random();
+        let r2: f64 = rand::random();
+
+        // spherical coordinates -> cartesian
+        // we pretend as if z axis was normal vector!
+        // theta = angle between z and and the direction
+        // phi = any angle in a full circle -> x and y coords
+        // x = sin(theta)*cos(phi)
+        // y = sin(theta)*sin(phi)
+        // z = cos(theta)
+        // now do some integration and move stuff around... 
+        // (see https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html#generatingrandomdirections)
+
+        let z = (1.0-r2).sqrt(); // cos(theta)
+        let sin_theta = r2.sqrt(); // because sin² + cos² = 1
+
+        let phi = 2.0 * std::f64::consts::PI * r1;
+        let x = phi.cos() * sin_theta;
+        let y = phi.sin() * sin_theta;
+
+        Vec3 { x, y, z }
+    }
+
     pub fn lerp(lhs: Vec3, rhs: Vec3, alpha: f64) -> Vec3 {
         (1.0 - alpha) * lhs + alpha * rhs
     }
@@ -205,6 +230,15 @@ impl Mul<Vec3> for Vec3 {
             y: self.y * rhs.y,
             z: self.z * rhs.z,
         }
+    }
+}
+
+//mutliply assign with vector
+impl MulAssign<Vec3> for Vec3 {
+    fn mul_assign(&mut self, rhs: Vec3) {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self.z *= rhs.z;
     }
 }
 

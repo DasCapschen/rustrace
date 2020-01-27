@@ -1,15 +1,12 @@
+use crate::material::MetalParameters;
 use sdl2::event::Event;
-
 use sdl2::keyboard::Keycode;
 
-use crate::hittables::primitives::Sphere;
-use crate::material::Material;
-use crate::material::Metallic;
+use crate::hittables::primitives::{Plane, Sphere};
+use crate::material::{Material, Metallic};
 use crate::renderer::Renderer;
-use crate::texture::ConstantTexture;
+use crate::texture::{ConstantTexture, CheckeredTexture, ImageTexture};
 use crate::vec3::Vec3;
-
-use crate::texture::ImageTexture;
 
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -22,6 +19,7 @@ mod ray;
 mod renderer;
 mod texture;
 mod vec3;
+mod onb;
 
 mod hit;
 mod hittables {
@@ -51,15 +49,15 @@ fn main() {
     //sdl2_context.mouse().set_relative_mouse_mode(true);
 
     // https://hdrihaven.com/
-    let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
+    let skybox = Arc::new(ImageTexture::new("res/textures/autumn_park_4k.hdr"));
 
     //create the actual raytracer
     let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 64, skybox);
 
     //create a 10x10x10 cube of spheres with colorful colors
-
-    for x in 0..10u8 {
-        for y in 0..10u8 {
+    
+    for x in 0..25u8 {
+        for y in 0..25u8 {
             for z in 0..10u8 {
                 let r = (x as f64 * (220.0 / 10.0) + 10.0) as u8;
                 let g = (y as f64 * (220.0 / 10.0) + 10.0) as u8;
@@ -77,6 +75,7 @@ fn main() {
             }
         }
     }
+    
 
     /*
     let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -87,28 +86,34 @@ fn main() {
 
     renderer.add_object(Arc::new(Plane {
         center: Vec3::new(0.0, 0.0, 0.0),
-        span_a: Vec3::new(10.0, 0.0, 0.0),
-        span_b: Vec3::new(0.0, 0.0, 10.0),
+        span_a: Vec3::new(100.0, 0.0, 0.0),
+        span_b: Vec3::new(0.0, 0.0, 100.0),
         material: Arc::new(ground_mat),
     }));
     */
 
     //let texture = Arc::new(ImageTexture::new("res/textures/globe.jpg"));
     //let normal = Arc::new(ImageTexture::new("res/textures/globeNormal.jpg"));
-    /*let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-
-    let metal_params = MetalParameters {
+    /*let metal_params = MetalParameters {
         metallic: Arc::new(ConstantTexture::new(Vec3::rgb(255,255,255))),
         roughness: Arc::new(ConstantTexture::new(Vec3::rgb(10,10,10))),
-    };
-
+    };*/
+    /*
+    let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
     renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(7.5, 5.0, 7.5),
         radius: 15.0,
         material: Arc::new(Material::new(texture, None, Metallic::NonMetal, None))
-    }));*/
+    }));
+    */
 
-    let mut pool = Pool::new(40);
+    //creates bvh and leaves the renderer immutable
+    let start = SystemTime::now();
+    renderer.finalise();
+    let end = SystemTime::now();
+    println!("Finalising took {:?}", end.duration_since(start).unwrap() );
+
+    let mut pool = Pool::new(8);
 
     let mut color_buffer = vec![0f32; (WIDTH * HEIGHT * 3) as usize];
     let mut albedo_buffer = vec![0f32; color_buffer.len()];
@@ -223,7 +228,7 @@ fn main() {
 
         let convert_start_time = SystemTime::now();
         //RGB => BGRA
-        let bgra_buffer: Vec<u8> = denoise_buffer
+        let bgra_buffer: Vec<u8> = color_buffer
             .chunks(3)
             .map(|chunk| {
                 vec![
