@@ -1,13 +1,11 @@
-use crate::texture::Texture;
-use rand::Rng;
+use crate::gfx::texture::Texture;
+
 use std::sync::Arc;
 
 use crate::hit::HitResult;
-use crate::onb::ONB;
+use crate::math::onb::ONB;
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
-
-use Metallic::Metal;
 
 /*
 TODO: refactor Material to trait?
@@ -103,7 +101,7 @@ impl Material {
     }
 
     // s(direction) -> directional distribution when light scatters
-    pub fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+    pub fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
         let uv_coords = hit.uv_coords.unwrap();
         let normal = self.map_normal(hit.normal, uv_coords);
 
@@ -120,7 +118,7 @@ impl Material {
     /// Returns Option<Tuple (Attenuation, Normal, Scattered Ray, PDF)>
     /// the pdf here is p(direction) ; the pdf of how we generate the random direction of the scattered ray
     /// this is the pdf we use to approximate the integral, while the scattering_pdf is like the BRDF
-    pub fn scatter(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    pub fn scatter(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         let uv_coords = hit.uv_coords.unwrap();
 
         let normal = self.map_normal(hit.normal, uv_coords);

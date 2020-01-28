@@ -2,11 +2,11 @@ use std::clone::Clone;
 
 use std::sync::Arc;
 
+use crate::gfx::material::Material;
 use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
-use crate::material::Material;
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 /*
 TODO: refactor this to something like...

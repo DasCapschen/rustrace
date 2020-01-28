@@ -1,7 +1,7 @@
 use image2::{Image, ImageBuf, Rgb};
 use std::path::Path;
 
-use crate::vec3::Vec3;
+use crate::math::vec3::Vec3;
 use std::sync::Arc;
 
 /*

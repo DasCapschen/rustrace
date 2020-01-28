@@ -1,7 +1,7 @@
 use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 use std::sync::Arc;
 

@@ -3,8 +3,8 @@ use std::path::Path;
 use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
 use crate::hittables::primitives::Triangle;
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 #[derive(Clone)]
 pub struct Mesh {

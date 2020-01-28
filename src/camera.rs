@@ -1,5 +1,5 @@
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 /// implements a camera from which to render from
 #[derive(Debug, Copy, Clone)]

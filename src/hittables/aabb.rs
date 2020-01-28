@@ -1,6 +1,6 @@
 use crate::hit::{Hit, HitResult};
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 /// Implements an Axis-Aligned Bounding-Box
 #[derive(Debug, Copy, Clone)]

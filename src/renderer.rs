@@ -1,12 +1,12 @@
-use crate::texture::Texture;
+use crate::gfx::texture::Texture;
 use rand::Rng;
 use std::sync::Arc;
 
 use crate::camera::Camera;
 use crate::hit::Hit;
 use crate::hittables::bvh::BvhTree;
+use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::vec3::Vec3;
 
 #[derive(Clone)]
 pub struct Renderer {

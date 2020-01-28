@@ -1,12 +1,11 @@
-use crate::material::MetalParameters;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-use crate::hittables::primitives::{Plane, Sphere};
-use crate::material::{Material, Metallic};
+use crate::gfx::material::{Material, Metallic};
+use crate::gfx::texture::{ConstantTexture, ImageTexture};
+use crate::hittables::primitives::Sphere;
+use crate::math::vec3::Vec3;
 use crate::renderer::Renderer;
-use crate::texture::{CheckeredTexture, ConstantTexture, ImageTexture};
-use crate::vec3::Vec3;
 
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -14,12 +13,19 @@ use std::time::SystemTime;
 use scoped_threadpool::Pool;
 
 mod camera;
-mod material;
-mod onb;
 mod ray;
 mod renderer;
-mod texture;
-mod vec3;
+
+mod gfx {
+    pub mod material;
+    pub mod texture;
+}
+
+mod math {
+    pub mod onb;
+    pub mod pdf;
+    pub mod vec3;
+}
 
 mod hit;
 mod hittables {
