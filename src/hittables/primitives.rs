@@ -131,38 +131,38 @@ impl Hit for Sphere {
 /// infinite planes no longer work after introduction of BVH
 #[derive(Clone)]
 pub struct Plane {
-    // +---------+
-    // |    ↑    |
-    // |   b|    |
-    // |    *--->|
-    // |       a |
-    // |         |
-    // +---------+
+    // +------+
+    // ↑ \    |
+    // b   \  |
+    // |     \|
+    // *--a-->+
     // normal = a x b
     // width = 2 * |a|
     // height = 2 * |b|
     /// the center (or position) of the plane
-    pub center: Vec3,
+    pub llc: Vec3,
     /// the first spanning vector
     pub span_a: Vec3,
     /// the second spanning vector
     pub span_b: Vec3,
     /// the material (color, etc) of the plane
     pub material: Arc<Material>,
+    /// whether or not this plane is a triangle
+    pub triangle: bool,
 }
 
 impl Hit for Plane {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
-        // (x - center) · normal = 0
-        // x => ray  x(t) = origin + t * direction
-        // (origin + t * direction - center) · normal = 0
-        // (origin - center) · normal + t * direction · normal = 0
-        // t * direction · normal = - (origin - center) · normal
-        // t = -((origin - center) · normal)/(direction · normal)
+        // (x - llc) · normal = 0
+        // x => ray(t) = origin + t * direction
+        // (origin + t * direction - llc) · normal = 0
+        // ((origin - llc) · normal) + (t * direction · normal) = 0
+        // t * direction · normal = - (origin - llc) · normal
+        // t = -((origin - llc) · normal)/(direction · normal)
 
         //NORMALISE THE NORMAL!!
         let normal = self.span_a.cross(self.span_b).normalised();
-        let parameter = -(ray.origin - self.center).dot(normal) / ray.direction.dot(normal);
+        let parameter = -(ray.origin - self.llc).dot(normal) / ray.direction.dot(normal);
 
         //no hit if outside [min, max]
         if parameter < t_min || parameter > t_max {
@@ -171,91 +171,54 @@ impl Hit for Plane {
 
         let hit_position = ray.origin + parameter * ray.direction;
 
-        //TODO: calculate UV coordinates
-
         //from lower left corner to hit
-        let llc = self.center - self.span_a - self.span_b;
-        let relative_hit = hit_position - llc;
+        let relative_hit = hit_position - self.llc;
 
-        let a_normalised = self.span_a.normalised();
-        let b_normalised = self.span_b.normalised();
 
-        //calculate only span_a / only span_b "component" of hit vector
-        //if span_b was (0,4) and span_a was (7,0) and hit was (3, 2)
-        //then, hit_on_span_a = (3,2) - (0,1) * 2 = (3,0)
-        //then, hit_on_span_b = (3,2) - (1,0) * 3 = (0,2)
-        // see vector_in_plane.ggb (geogebra)
-        let hit_on_span_a = relative_hit - b_normalised * (relative_hit.dot(b_normalised));
-        let hit_on_span_b = relative_hit - a_normalised * (relative_hit.dot(a_normalised));
+        //the way we used to do it here was the right idea, but not fully correct
+        //it failed for non-orthogonal spanning vectors!
+        // http://geomalgorithms.com/a06-_intersect-2.html
 
-        // 2.0* because it's relative to lower left corner, not center!
-        // alpha and beta are in [0;1] if inside the plane
-        let mut u = hit_on_span_a.len() / (2.0 * self.span_a.len());
-        let mut v = hit_on_span_b.len() / (2.0 * self.span_b.len());
+        let ada = self.span_a.dot(self.span_a);
+        let bdb = self.span_b.dot(self.span_b);
+        let rda = relative_hit.dot(self.span_a);
+        let rdb = relative_hit.dot(self.span_b);
+        let adb = self.span_a.dot(self.span_b);
 
-        let mut hit_outside_bounds = false;
+        let denom = 1.0 / ((adb * adb) - (ada * bdb));
 
-        if u > 1.0 {
-            u = u.fract();
-            hit_outside_bounds = true;
+        let u = ((adb * rdb) - (bdb * rda)) * denom;
+        let v = ((adb * rda) - (ada * rdb)) * denom;
+
+        // u, v must be positive, smaller 1, and if a triangle, their sum must by < 1 too
+        if u < 0.0 || u > 1.0 
+        || v < 0.0 || v > 1.0 
+        || (self.triangle && (u+v) > 1.0) {
+            None
         }
-        if v > 1.0 {
-            v = v.fract();
-            hit_outside_bounds = true;
+        else {
+            Some(HitResult {
+                ray_param: parameter,
+                hit_position,
+                normal,
+                material: Some(self.material.clone()),
+                uv_coords: Some((u, v)),
+            })
         }
-
-        let result = HitResult {
-            ray_param: parameter,
-            hit_position,
-            normal,
-            material: Some(self.material.clone()),
-            uv_coords: Some((u, v)),
-        };
-
-        Some(result)
     }
 
     fn bounding_box(&self) -> Option<AABB> {
+        //give the bb some height!
+        let normal = self.span_a.cross(self.span_b);
+        let epsilon = normal;
+
         Some(AABB::new(
-            self.center - self.span_a - self.span_b,
-            self.center + self.span_a + self.span_b,
+            self.llc - epsilon,
+            self.llc + self.span_a + self.span_b + epsilon,
         ))
     }
 
     fn center(&self) -> Vec3 {
-        self.center
-    }
-}
-
-/// represents a triangle in 3d space
-#[derive(Clone)]
-pub struct Triangle {
-    // +
-    // ↑ \
-    // b   \
-    // |     \
-    // *--a-->+
-    // normal = a x b
-    /// the position of a corner or the triangle
-    pub center: Vec3,
-    /// a vector pointing from center to another corner of the triangle
-    pub span_a: Vec3,
-    /// a vector pointing from center to another corner of the triangle
-    pub span_b: Vec3,
-    /// the material (color, etc) of the triangle
-    pub material: Arc<Material>,
-}
-
-impl Hit for Triangle {
-    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitResult> {
-        None
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        None
-    }
-
-    fn center(&self) -> Vec3 {
-        self.center
+        self.llc
     }
 }
