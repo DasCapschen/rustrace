@@ -181,7 +181,8 @@ impl Material {
         }*/
 
         //else, scatter it
-        let scattered = Ray::new(hit.hit_position, direction);
+        let epsilon = normal * 0.001;
+        let scattered = Ray::new(hit.hit_position + epsilon, direction);
 
         //return final
         Some((albedo, normal, scattered, pdf))
