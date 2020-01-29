@@ -52,8 +52,7 @@ impl Hit for [Arc<dyn Hit>] {
 
 //hit a list of specific hittable
 //useful for hitting triangles of a mesh
-impl<T: Hit> Hit for Vec<T>
-{
+impl<T: Hit> Hit for Vec<T> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let mut closest = t_max;
         let mut result = None;

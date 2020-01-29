@@ -3,8 +3,6 @@ use crate::hittables::aabb::AABB;
 use crate::math::vec3::Vec3;
 use crate::ray::Ray;
 
-use std::sync::Arc;
-
 /*
     This is more idiomatic, but it increases rendering time.
     We should probably try to have some order in the nodes vector.
@@ -151,7 +149,7 @@ impl<T: Hit> BvhTree<T> {
     }
 }
 
-impl<T: Hit> Hit for BvhTree<T>{
+impl<T: Hit> Hit for BvhTree<T> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         self.hit_node(0, ray, t_min, t_max)
     }

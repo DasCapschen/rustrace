@@ -1,13 +1,13 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
+use crate::camera::Camera;
 use crate::gfx::material::{Material, Metallic};
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
-use crate::hittables::primitives::{Sphere, Plane};
+use crate::hittables::mesh::Mesh;
+use crate::hittables::primitives::{Plane, Sphere};
 use crate::math::vec3::Vec3;
 use crate::renderer::Renderer;
-use crate::hittables::mesh::Mesh;
-use crate::camera::Camera;
 
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -24,10 +24,10 @@ mod gfx {
 }
 
 mod math {
+    pub mod mat3;
     pub mod onb;
     pub mod pdf;
     pub mod vec3;
-    pub mod mat3;
 }
 
 mod hit;
@@ -119,17 +119,17 @@ fn main() {
         metallic: Arc::new(ConstantTexture::new(Vec3::rgb(255,255,255))),
         roughness: Arc::new(ConstantTexture::new(Vec3::rgb(10,10,10))),
     };*/
-    
+
     let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
     let material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
-    
+
     /*renderer.add_object(Arc::new(Sphere {
         center: Vec3::new(0.0, 0.0, 0.0),
         radius: 0.5,
         material: material
     }));*/
-    
-    renderer.add_object(Arc::new( Mesh::new("res/models/dragon.obj") ));
+
+    renderer.add_object(Arc::new(Mesh::new("res/models/dragon.obj")));
 
     //creates bvh and leaves the renderer immutable
     let start = SystemTime::now();

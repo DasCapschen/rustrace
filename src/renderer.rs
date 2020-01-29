@@ -20,7 +20,13 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(width: i32, height: i32, samples: u8, camera: Camera, sky: Arc<dyn Texture>) -> Self {
+    pub fn new(
+        width: i32,
+        height: i32,
+        samples: u8,
+        camera: Camera,
+        sky: Arc<dyn Texture>,
+    ) -> Self {
         Renderer {
             width,
             height,

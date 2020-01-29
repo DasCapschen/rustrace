@@ -174,7 +174,6 @@ impl Hit for Plane {
         //from lower left corner to hit
         let relative_hit = hit_position - self.llc;
 
-
         //the way we used to do it here was the right idea, but not fully correct
         //it failed for non-orthogonal spanning vectors!
         // http://geomalgorithms.com/a06-_intersect-2.html
@@ -191,12 +190,9 @@ impl Hit for Plane {
         let v = ((adb * rda) - (ada * rdb)) * denom;
 
         // u, v must be positive, smaller 1, and if a triangle, their sum must by < 1 too
-        if u < 0.0 || u > 1.0 
-        || v < 0.0 || v > 1.0 
-        || (self.triangle && (u+v) > 1.0) {
+        if u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 || (self.triangle && (u + v) > 1.0) {
             None
-        }
-        else {
+        } else {
             Some(HitResult {
                 ray_param: parameter,
                 hit_position,

@@ -3,18 +3,13 @@ use crate::gfx::material::Metallic;
 use crate::gfx::texture::ConstantTexture;
 use std::path::Path;
 use std::sync::Arc;
-use std::str::FromStr;
 
 use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
+use crate::hittables::bvh::BvhTree;
 use crate::hittables::primitives::Plane;
 use crate::math::vec3::Vec3;
 use crate::ray::Ray;
-use crate::hittables::bvh::BvhTree;
-
-use std::io::BufReader;
-use std::io::BufRead;
-use std::fs::File;
 
 #[derive(Clone)]
 pub struct Mesh {
@@ -25,36 +20,38 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new<P: AsRef<Path>>(file: P) -> Self {
-        let (models, mats) = tobj::load_obj(file.as_ref()).expect("couldn't load file");
+        let (models, _mats) = tobj::load_obj(file.as_ref()).expect("couldn't load file");
 
         //load material
         let material = Arc::new(Material::new(
-                Arc::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-                None,
-                Metallic::NonMetal,
-                None,
+            Arc::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
+            None,
+            Metallic::NonMetal,
+            None,
         ));
 
         // just assume there is only 1 model in the obj!
-        let mesh: Vec<Plane> = models[0].mesh.indices
+        let mesh: Vec<Plane> = models[0]
+            .mesh
+            .indices
             .chunks(3)
             .map(|chunk| {
                 let v1 = Vec3 {
-                    x: models[0].mesh.positions[ 3 * chunk[0] as usize + 0 ],
-                    y: models[0].mesh.positions[ 3 * chunk[0] as usize + 1 ],
-                    z: models[0].mesh.positions[ 3 * chunk[0] as usize + 2 ],
+                    x: models[0].mesh.positions[3 * chunk[0] as usize + 0],
+                    y: models[0].mesh.positions[3 * chunk[0] as usize + 1],
+                    z: models[0].mesh.positions[3 * chunk[0] as usize + 2],
                 };
 
                 let v2 = Vec3 {
-                    x: models[0].mesh.positions[ 3 * chunk[1] as usize + 0 ],
-                    y: models[0].mesh.positions[ 3 * chunk[1] as usize + 1 ],
-                    z: models[0].mesh.positions[ 3 * chunk[1] as usize + 2 ],
+                    x: models[0].mesh.positions[3 * chunk[1] as usize + 0],
+                    y: models[0].mesh.positions[3 * chunk[1] as usize + 1],
+                    z: models[0].mesh.positions[3 * chunk[1] as usize + 2],
                 };
 
                 let v3 = Vec3 {
-                    x: models[0].mesh.positions[ 3 * chunk[2] as usize + 0 ],
-                    y: models[0].mesh.positions[ 3 * chunk[2] as usize + 1 ],
-                    z: models[0].mesh.positions[ 3 * chunk[2] as usize + 2 ],
+                    x: models[0].mesh.positions[3 * chunk[2] as usize + 0],
+                    y: models[0].mesh.positions[3 * chunk[2] as usize + 1],
+                    z: models[0].mesh.positions[3 * chunk[2] as usize + 2],
                 };
 
                 Plane {
@@ -66,7 +63,7 @@ impl Mesh {
                 }
             })
             .collect();
-        
+
         let bvh = BvhTree::from_hittables(mesh);
 
         Mesh {
