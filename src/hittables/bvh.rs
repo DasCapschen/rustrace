@@ -12,10 +12,10 @@ use std::sync::Arc;
 */
 
 #[derive(Clone)]
-pub struct BvhTree {
+pub struct BvhTree<T: Hit + Sized> {
     //root is always 0
     nodes: Vec<BvhNode>,
-    objects: Vec<Arc<dyn Hit>>,
+    objects: Vec<T>,
 }
 
 /// A Node of the Bounding Volume Hierarchy Tree
@@ -29,8 +29,8 @@ struct BvhNode {
     count: u32, //4b
 }
 
-impl BvhTree {
-    pub fn from_hittables(list: Vec<Arc<dyn Hit>>) -> Self {
+impl<T: Hit> BvhTree<T> {
+    pub fn from_hittables(list: Vec<T>) -> Self {
         //clone the slice we got so we can sort it!
         let mut tree = BvhTree {
             nodes: vec![],
@@ -47,7 +47,7 @@ impl BvhTree {
         tree
     }
 
-    fn build_subtree(&mut self, index: u32, mut list: Vec<Arc<dyn Hit>>) {
+    fn build_subtree(&mut self, index: u32, mut list: Vec<T>) {
         //sort list along some (random) axis
         let i: u32 = rand::random::<u32>() % 3;
         match i {
@@ -151,7 +151,7 @@ impl BvhTree {
     }
 }
 
-impl Hit for BvhTree {
+impl<T: Hit> Hit for BvhTree<T>{
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         self.hit_node(0, ray, t_min, t_max)
     }

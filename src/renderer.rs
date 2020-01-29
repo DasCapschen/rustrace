@@ -16,24 +16,16 @@ pub struct Renderer {
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
-    bvh: Option<BvhTree>,
+    bvh: Option<BvhTree<Arc<dyn Hit>>>,
 }
 
 impl Renderer {
-    pub fn new(width: i32, height: i32, samples: u8, sky: Arc<dyn Texture>) -> Self {
-        let pos = Vec3::new(30.0, 20.0, -30.0);
-        let target = Vec3::new(7.5, 5.0, 7.5); //sphere center
-        let dir = target - pos;
-
+    pub fn new(width: i32, height: i32, samples: u8, camera: Camera, sky: Arc<dyn Texture>) -> Self {
         Renderer {
             width,
             height,
             samples,
-            camera: Camera::new(
-                pos, dir, 90.0, //hfov
-                width, height, 1.0, //if aperture = 0 ; focus dist is irrelevant
-                0.0, //perfect camera => aperture = 0 ; => no DoF ; bigger aperture => stronger DoF
-            ),
+            camera,
             objects: Vec::new(),
             sky,
             bvh: None,
@@ -107,7 +99,7 @@ impl Renderer {
 
                     //I am not sure if these should be sampled multiple times...
                     final_albedo += albedo;
-                    final_normal += 0.5 * (normal + Vec3::new(1.0, 1.0, 1.0)); //[-1,1] => [0,1]
+                    final_normal += normal; //[-1,1]
                 }
 
                 //normalize color after sampling a lot
@@ -131,6 +123,9 @@ impl Renderer {
         let mut out_albedo: Option<Vec3> = None;
         let mut out_normal: Option<Vec3> = None;
 
+        let mut bounces: u32 = 0;
+        const MAX_BOUNCES: u32 = 5;
+
         // recursively, this was:
         // return emitted + attenuation * scattering_pdf() * trace_color() / pdf
         // -> e1 + a1 * s1 * (1/pdf1) * ( e2 + a2 * s2 * (1/pdf2) * (...) )
@@ -139,6 +134,11 @@ impl Renderer {
         // that's a sum!
 
         while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f32::MAX) {
+            /*if bounces > MAX_BOUNCES {
+                break;
+            }
+            bounces += 1;*/
+            //println!("{}", bounces);
             if let Some(mat) = &hit.material {
                 //emitted is even added if we do not scatter!
                 let emitted = mat.emitted();
@@ -156,32 +156,29 @@ impl Renderer {
                     if out_normal.is_none() {
                         out_normal = Some(normal);
                     }
-                    continue;
                 }
+            } else {
+                panic!("How did you manage to not have a material!?");
             }
-
-            if out_normal.is_none() {
-                out_normal = Some(hit.normal);
-            }
-            //else
-            let temp = Vec3::new(0.0, 0.0, 0.0);
-            return (temp, temp, out_normal.unwrap());
         }
 
         //calculate uv coords from ray direction
-        let u = 1.0
-            - ((ray_to_use.direction.z.atan2(ray_to_use.direction.x) + std::f32::consts::PI)
-                / (2.0 * std::f32::consts::PI));
-        let v =
-            ((-ray_to_use.direction.y).asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
+        let x = ray_to_use.direction.x;
+        let z = ray_to_use.direction.z;
+        let u = 1.0 - ((z.atan2(x) + std::f32::consts::PI) / (2.0 * std::f32::consts::PI));
+
+        let y = -ray_to_use.direction.y.min(1.0).max(-1.0); //clamp to [-1, 1] just in case (asin might return nan)
+        let v = (y.asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
 
         let skycolor = self.sky.texture((u, v));
+        //let skycolor = Vec3::rgb(0,0,0);
 
         if out_albedo.is_none() {
             out_albedo = Some(skycolor)
         }
         if out_normal.is_none() {
             out_normal = Some(-ray_to_use.direction.normalised())
+            //out_normal = Some(Vec3::rgb(0,0,0));
         }
 
         out_color += skycolor * final_attenuation;

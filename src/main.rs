@@ -3,9 +3,11 @@ use sdl2::keyboard::Keycode;
 
 use crate::gfx::material::{Material, Metallic};
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
-use crate::hittables::primitives::Sphere;
+use crate::hittables::primitives::{Sphere, Plane};
 use crate::math::vec3::Vec3;
 use crate::renderer::Renderer;
+use crate::hittables::mesh::Mesh;
+use crate::camera::Camera;
 
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -25,6 +27,7 @@ mod math {
     pub mod onb;
     pub mod pdf;
     pub mod vec3;
+    pub mod mat3;
 }
 
 mod hit;
@@ -55,13 +58,25 @@ fn main() {
     //sdl2_context.mouse().set_relative_mouse_mode(true);
 
     // https://hdrihaven.com/
-    let skybox = Arc::new(ImageTexture::new("res/textures/autumn_park_4k.hdr"));
+    let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
+
+    let pos = Vec3::new(-1.0, 0.5, 0.0);
+    let target = Vec3::new(0.0, 0.0, 0.0);
+    let camera = Camera::new(
+        /*pos: */ pos,
+        /*dir: */ target - pos,
+        /*fov: */ 90.0,
+        /*w: */ WIDTH as i32,
+        /*h: */ HEIGHT as i32,
+        /*focus: */ 1.0,    //if aperture == 0 focus dist is irrelevant
+        /*aperture: */ 0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+    );
 
     //create the actual raytracer
-    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 64, skybox);
+    let mut renderer = Renderer::new(WIDTH as i32, HEIGHT as i32, 1, camera, skybox);
 
     //create a 10x10x10 cube of spheres with colorful colors
-
+    /*
     for x in -10..10i8 {
         for y in -10..10i8 {
             for z in -10..10i8 {
@@ -81,6 +96,7 @@ fn main() {
             }
         }
     }
+    */
 
     /*
     let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -103,14 +119,17 @@ fn main() {
         metallic: Arc::new(ConstantTexture::new(Vec3::rgb(255,255,255))),
         roughness: Arc::new(ConstantTexture::new(Vec3::rgb(10,10,10))),
     };*/
-    /*
+    
     let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-    renderer.add_object(Arc::new(Sphere {
-        center: Vec3::new(7.5, 5.0, 7.5),
-        radius: 15.0,
-        material: Arc::new(Material::new(texture, None, Metallic::NonMetal, None))
-    }));
-    */
+    let material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
+    
+    /*renderer.add_object(Arc::new(Sphere {
+        center: Vec3::new(0.0, 0.0, 0.0),
+        radius: 0.5,
+        material: material
+    }));*/
+    
+    renderer.add_object(Arc::new( Mesh::new("res/models/dragon.obj") ));
 
     //creates bvh and leaves the renderer immutable
     let start = SystemTime::now();
@@ -235,7 +254,7 @@ fn main() {
 
         let convert_start_time = SystemTime::now();
         //RGB => BGRA
-        let bgra_buffer: Vec<u8> = color_buffer
+        let bgra_buffer: Vec<u8> = denoise_buffer
             .chunks(3)
             .map(|chunk| {
                 vec![
