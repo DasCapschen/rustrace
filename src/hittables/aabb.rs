@@ -16,12 +16,10 @@ impl AABB {
     /// # Arguments
     /// * `start` - the lower left front corner of the box
     /// * `end` - the upper right back corner of the box
-    pub fn new(start: Vec3, end: Vec3) -> Self {
+    pub fn new(mut start: Vec3, mut end: Vec3) -> Self {
         //start < end !
         if start.len_squared() > end.len_squared() {
-            let temp = start;
-            let _start = end;
-            let _end = temp;
+            std::mem::swap(&mut start, &mut end);
         }
 
         Self { start, end }
