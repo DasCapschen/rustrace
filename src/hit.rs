@@ -20,36 +20,6 @@ pub trait Hit: Send + Sync {
     fn center(&self) -> Vec3;
 }
 
-impl Hit for [Arc<dyn Hit>] {
-    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitResult> {
-        None
-    }
-
-    fn bounding_box(&self) -> Option<AABB> {
-        if self.len() == 0 {
-            None
-        } else if self.len() == 1 {
-            self[0].bounding_box()
-        } else {
-            if let Some(mut bb) = self[0].bounding_box() {
-                for h in &self[1..] {
-                    if let Some(bb2) = h.bounding_box() {
-                        bb = AABB::surrounding_box(&bb, &bb2);
-                    } else {
-                        return None;
-                    }
-                }
-                return Some(bb);
-            }
-            None
-        }
-    }
-
-    fn center(&self) -> Vec3 {
-        todo!()
-    }
-}
-
 //hit a list of specific hittable
 //useful for hitting triangles of a mesh
 impl<T: Hit> Hit for Vec<T> {
@@ -82,7 +52,7 @@ impl<T: Hit> Hit for Vec<T> {
         //get bounding box of first object
         if let Some(mut bb) = self.first().unwrap().bounding_box() {
             //now, for every other object, get its bounding box
-            for obj in self {
+            for obj in &self[1..] {
                 if let Some(bb2) = obj.bounding_box() {
                     //and then make a new bounding box containing both bounding boxes!
                     bb = AABB::surrounding_box(&bb, &bb2);
@@ -101,7 +71,7 @@ impl<T: Hit> Hit for Vec<T> {
     }
 
     fn center(&self) -> Vec3 {
-        todo!()
+        self.bounding_box().unwrap().center()
     }
 }
 

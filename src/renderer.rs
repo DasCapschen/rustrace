@@ -1,193 +1,307 @@
-use crate::gfx::texture::Texture;
-use rand::Rng;
+use sdl2::video::Window;
+use crate::pathtracer::PathTracer;
 use std::sync::Arc;
-
+use crate::gfx::texture::{ImageTexture, ConstantTexture};
 use crate::camera::Camera;
-use crate::hit::Hit;
-use crate::hittables::bvh::BvhTree;
 use crate::math::vec3::Vec3;
-use crate::ray::Ray;
+use crate::hittables::mesh::Mesh;
+use crate::gfx::material::{Material, Metallic};
+use sdl2::{EventPump, Sdl};
+use std::time::Instant;
+use scoped_threadpool::Pool;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use std::task::Context;
 
-#[derive(Clone)]
+enum DisplayMode {
+    Denoised,
+    Color,
+    Albedo,
+    Normal,
+    Depth,
+}
+
+const GAMMA: f32 = 1.0 / 2.2;
+
 pub struct Renderer {
-    width: i32,
-    height: i32,
-    samples: u8,
-    pub camera: Camera,
-    objects: Vec<Arc<dyn Hit>>,
-    sky: Arc<dyn Texture>,
-    bvh: Option<BvhTree<Arc<dyn Hit>>>,
+    width: u32,
+    height: u32,
+
+    context: Sdl,
+    window: Window,
+
+    path_tracer: PathTracer,
+    display_mode: DisplayMode,
+    running: bool,
+
+    color_buffer: Vec<f32>,
+    albedo_buffer: Vec<f32>,
+    normal_buffer: Vec<f32>,
+    depth_buffer: Vec<f32>,
 }
 
 impl Renderer {
-    pub fn new(
-        width: i32,
-        height: i32,
-        samples: u8,
-        camera: Camera,
-        sky: Arc<dyn Texture>,
-    ) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
+        //initialise SDL2
+        let context = sdl2::init().unwrap();
+        let video_subsystem = context.video().unwrap();
+
+        //hide cursor, lock mouse to window
+        //sdl2_context.mouse().set_relative_mouse_mode(true);
+
+        //create a window
+         let window = video_subsystem
+             .window("Raytracer", width, height)
+             .position_centered()
+             .build()
+             .unwrap();
+
+        /// setup the camera here
+        let pos = Vec3::new(-1.0, 1.0, 1.0);
+        let target = Vec3::new(0.0, 0.5, 0.0);
+        let camera = Camera::new(
+            /*pos: */ pos,
+            /*dir: */ target - pos,
+            /*fov: */ 90.0,
+            /*w: */ width as i32,
+            /*h: */ height as i32,
+            /*focus: */ 1.0,    //if aperture == 0 focus dist is irrelevant
+            /*aperture: */ 0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+        );
+
+        // https://hdrihaven.com/
+        let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
+
+        /// create the renderer
+        let path_tracer = PathTracer::new(width as i32, height as i32, 1, camera, skybox);
+
+        let buffer_size = (width * height * 3) as usize;
         Renderer {
             width,
             height,
-            samples,
-            camera,
-            objects: Vec::new(),
-            sky,
-            bvh: None,
+            context,
+            window,
+            path_tracer,
+            display_mode: DisplayMode::Denoised,
+            running: false,
+            color_buffer: vec![0f32; buffer_size],
+            albedo_buffer: vec![0f32; buffer_size],
+            normal_buffer: vec![0f32; buffer_size],
+            depth_buffer: vec![0f32; buffer_size],
         }
     }
 
-    pub fn add_object(&mut self, object: Arc<dyn Hit>) {
-        self.objects.push(object);
+    /// check events (resize, quit, buttons, ...)
+    fn handle_sdl_events(&mut self, event_pump: &mut EventPump) {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }
+                => self.running = false,
+                Event::KeyDown { keycode: Some(Keycode::W), .. }
+                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.forward(),
+                Event::KeyDown { keycode: Some(Keycode::S), .. }
+                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.forward(),
+                Event::KeyDown { keycode: Some(Keycode::D), .. }
+                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right(),
+                Event::KeyDown { keycode: Some(Keycode::A), .. }
+                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right(),
+                Event::KeyDown { keycode: Some(Keycode::Space), .. }
+                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up(),
+                Event::KeyDown { keycode: Some(Keycode::C), .. }
+                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up(),
+                Event::KeyDown { keycode: Some(Keycode::F1), .. }
+                => self.display_mode = DisplayMode::Denoised,
+                Event::KeyDown { keycode: Some(Keycode::F2), .. }
+                => self.display_mode = DisplayMode::Color,
+                Event::KeyDown { keycode: Some(Keycode::F3), .. }
+                => self.display_mode = DisplayMode::Albedo,
+                Event::KeyDown { keycode: Some(Keycode::F4), .. }
+                => self.display_mode = DisplayMode::Normal,
+                Event::KeyDown { keycode: Some(Keycode::F5), .. }
+                => self.display_mode = DisplayMode::Depth,
+                _ => {}
+            }
+        }
     }
 
-    //TODO: make it so that finalise leaves renderer immutable?
-    //-> builder pattern?
-    pub fn finalise(mut self) -> Self {
-        //build the bvh from our objects (MOVED!!!)
-        self.bvh = Some(BvhTree::from_hittables(self.objects));
+    /// creates the scene that will be rendered
+    pub fn build_scene(mut self) -> Self {
+        //create a 10x10x10 cube of spheres with colorful colors
+        /*
+        for x in -10..10i8 {
+            for y in -10..10i8 {
+                for z in -10..10i8 {
+                    let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
+                    let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
+                    let b = (z as f32 * (220.0 / 10.0) + 10.0) as u8;
 
-        //replace moved value with new empty value
-        self.objects = vec![];
+                    let color = Arc::new(ConstantTexture::new(Vec3::rgb(r, g, b)));
+                    let metallic = Metallic::NonMetal;
+                    let refraction = None;
+
+                    renderer.add_object(Arc::new(Sphere {
+                        center: 1.5 * Vec3::new(x as f32, y as f32, z as f32),
+                        radius: 0.5,
+                        material: Arc::new(Material::new(color, None, metallic, refraction)),
+                    }));
+                }
+            }
+        }
+        */
+
+        /*
+        let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
+        let checker_bright = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
+        let checkered_texture = Arc::new(CheckeredTexture::new(checker_dark, checker_bright));
+
+        let ground_mat = Material::new(checkered_texture, None, Metallic::NonMetal, None);
+
+        renderer.add_object(Arc::new(Plane {
+            center: Vec3::new(0.0, 0.0, 0.0),
+            span_a: Vec3::new(100.0, 0.0, 0.0),
+            span_b: Vec3::new(0.0, 0.0, 100.0),
+            material: Arc::new(ground_mat),
+        }));
+        */
+
+        //let texture = Arc::new(ImageTexture::new("res/textures/globe.jpg"));
+        //let normal = Arc::new(ImageTexture::new("res/textures/globeNormal.jpg"));
+        /*let metal_params = MetalParameters {
+            metallic: Arc::new(ConstantTexture::new(Vec3::rgb(255,255,255))),
+            roughness: Arc::new(ConstantTexture::new(Vec3::rgb(10,10,10))),
+        };*/
+
+        let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
+        let material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
+
+        /*renderer.add_object(Arc::new(Sphere {
+            center: Vec3::new(0.0, 0.0, 0.0),
+            radius: 0.5,
+            material: material
+        }));*/
+
+        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/cube.obj")));
+
+        /// DO NOT CHANGE STUFF AFTER THIS COMMENT
+
+        //creates bvh and leaves the scene immutable (ownership moved to bvh)
+        let finalise_time = Instant::now();
+        self.path_tracer = self.path_tracer.finalise();
+        println!("Finalising took {:?}", finalise_time.elapsed());
         self
     }
 
-    fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
-        let x_stride = 3; //because 3 color values
-        let y_stride = self.width * x_stride; //because every width pixel has 3 color values
-
-        const R: i32 = 0;
-        const G: i32 = 1;
-        const B: i32 = 2;
-
-        let position = (x * x_stride) + (y * y_stride);
-
-        buf[(R + position) as usize] = color.x.min(1.0).max(0.0) as f32;
-        buf[(G + position) as usize] = color.y.min(1.0).max(0.0) as f32;
-        buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
+    /// does gamma correction and converts f32-RGB to u8-BGRA
+    fn post_process(raw: &Vec<f32>) -> Vec<u8> {
+        //RGB => BGRA
+        raw.chunks(3)
+            .map(|chunk| {
+                vec![
+                    //RGB -> BGR, and gamma correct
+                    (chunk[2].powf(GAMMA) * 255.0) as u8,
+                    (chunk[1].powf(GAMMA) * 255.0) as u8,
+                    (chunk[0].powf(GAMMA) * 255.0) as u8,
+                    //add alpha channel
+                    0u8,
+                ]
+            })
+            .flatten()
+            .collect()
     }
 
-    pub fn draw_image(
-        &self,
-        color_buf: &mut [f32],
-        albedo_buf: &mut [f32],
-        normal_buf: &mut [f32],
-        offset: usize,
-    ) {
-        // /width because line width, /3 because RGB
-        let y_max = color_buf.len() / self.width as usize / 3;
+    /// MAIN LOOP
+    pub fn run(&mut self) {
+        self.running = true;
 
-        let offset = offset / 3; //RGB
-        let y_offset = (offset / self.width as usize) as i32; // /width because line width
-        let x_offset = (offset % (self.width as usize)) as i32;
+        //we can't really save any denoiser stuff (really annoying...)
+        //create the denoiser stuff
+        let denoise_device = oidn::Device::new();
+        let mut denoise_filter = oidn::filter::RayTracing::new(&denoise_device);
+        denoise_filter
+            .set_srgb(false)
+            .set_img_dims(self.width as usize, self.height as usize);
 
-        //draw image
-        let mut rng = rand::thread_rng();
+        //create thread pool (cannot save this either, annoying...)
+        let mut thread_pool = Pool::new(8);
 
-        for x in 0..self.width {
-            for y in 0..y_max as i32 {
-                let mut final_color = Vec3::rgb(0, 0, 0);
-                let mut final_albedo = Vec3::rgb(0, 0, 0);
-                let mut final_normal = Vec3::rgb(0, 0, 0);
+        let mut event_pump = self.context.event_pump().unwrap();
+        while self.running {
+            self.handle_sdl_events(&mut event_pump);
 
-                //multisample
-                for _ in 0..self.samples {
-                    let ray = self.camera.get_ray(
-                        (x + x_offset) as f32 + rng.gen_range(0.0, 1.0),
-                        (y + y_offset) as f32 + rng.gen_range(0.0, 1.0),
-                    );
+            let subdiv = thread_pool.thread_count() as usize;
+            let len = self.color_buffer.len() / subdiv;
 
-                    let (color, albedo, normal) = self
-                        .trace_color(&ray, self.bvh.as_ref().expect("did not call finalise()!"));
+            let render_time = Instant::now();
 
-                    final_color += color;
+            //this is a new thread
+            thread_pool.scoped(|s| {
+                //here, create references to outside things, like a thread setup
+                let r = &self.path_tracer;
 
-                    //I am not sure if these should be sampled multiple times...
-                    final_albedo += albedo;
-                    final_normal += normal; //[-1,1]
+                //Mutable Slices of our vectors do NOT split the vector itself below!
+                let mut curr_color_buf = &mut self.color_buffer[..];
+                let mut curr_albedo_buf = &mut self.albedo_buffer[..];
+                let mut curr_normal_buf = &mut self.normal_buffer[..];
+                let mut curr_depth_buf = &mut self.depth_buffer[..];
+
+                for i in 0..subdiv {
+                    //split the buffers into parts for each thread!
+                    let (color_slice, color_buf) = curr_color_buf.split_at_mut(len);
+                    curr_color_buf = color_buf;
+                    let (albedo_slice, albedo_buf) = curr_albedo_buf.split_at_mut(len);
+                    curr_albedo_buf = albedo_buf;
+                    let (normal_slice, normal_buf) = curr_normal_buf.split_at_mut(len);
+                    curr_normal_buf = normal_buf;
+                    let (depth_slice, depth_buf) = curr_depth_buf.split_at_mut(len);
+                    curr_depth_buf = depth_buf;
+
+                    //this is the actual function of the thread
+                    s.execute(move || {
+                        r.draw_image(
+                            color_slice,
+                            albedo_slice,
+                            normal_slice,
+                            depth_slice,
+                            i * len);
+                    });
                 }
+            });
+            println!("Render took {:?}", render_time.elapsed());
 
-                //normalize color after sampling a lot
-                final_color /= self.samples as f32;
-                final_albedo /= self.samples as f32;
-                final_normal /= self.samples as f32;
+            //denoise image
+            let denoise_time = Instant::now();
+            let mut denoise_buffer = vec![0f32; self.color_buffer.len()];
+            denoise_filter.execute(
+                &self.color_buffer[..],
+                Some(&self.albedo_buffer[..]),
+                Some(&self.normal_buffer[..]),
+                &mut denoise_buffer[..],
+            ).expect("failed to denoise image");
+            println!("Denoising took {:?}", denoise_time.elapsed());
 
-                self.set_pixel(color_buf, x, y, final_color);
-                self.set_pixel(albedo_buf, x, y, final_albedo);
-                self.set_pixel(normal_buf, x, y, final_normal);
+            let pp_buffer = match &self.display_mode {
+                Denoised => &denoise_buffer,
+                Color => &self.color_buffer,
+                Albedo => &self.albedo_buffer,
+                Normal => &self.normal_buffer,
+                Depth => &self.depth_buffer,
+            };
+
+            let convert_time = Instant::now();
+            let display_buffer = Self::post_process(pp_buffer);
+            println!("Post processing took {:?}", convert_time.elapsed());
+
+            //write pixels
+            let mut surface = self.window.surface(&event_pump).unwrap();
+            if let Some(pixel_buffer) = surface.without_lock_mut() {
+                pixel_buffer.copy_from_slice(&display_buffer[..]);
             }
+
+            println!("Total draw time was: {:?}", render_time.elapsed());
+            println!("=========================");
+
+            //"swap" images
+            surface.update_window().expect("failed to update windows!");
         }
-    }
-
-    /// # Return Value
-    /// Returns Tuple of (Color, Albedo, Normal)
-    fn trace_color(&self, ray: &Ray, object: &dyn Hit) -> (Vec3, Vec3, Vec3) {
-        let mut ray_to_use = *ray;
-        let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
-        let mut out_color = Vec3::new(0.0, 0.0, 0.0);
-        let mut out_albedo: Option<Vec3> = None;
-        let mut out_normal: Option<Vec3> = None;
-
-        let mut bounces: u32 = 0;
-        const MAX_BOUNCES: u32 = 5;
-
-        // recursively, this was:
-        // return emitted + attenuation * scattering_pdf() * trace_color() / pdf
-        // -> e1 + a1 * s1 * (1/pdf1) * ( e2 + a2 * s2 * (1/pdf2) * (...) )
-        // -> 1 * (...)
-        // -> 0 + 1*e1 + (a1*s1*(1/pdf1))*e2 + (a1*s1*(1/pdf1))*(a2*s2*(1/pdf2)) ...
-        // that's a sum!
-
-        while let Some(hit) = object.hit(&ray_to_use, 0.0001, std::f32::MAX) {
-            /*if bounces > MAX_BOUNCES {
-                break;
-            }
-            bounces += 1;*/
-            //println!("{}", bounces);
-            if let Some(mat) = &hit.material {
-                //emitted is even added if we do not scatter!
-                let emitted = mat.emitted();
-                out_color += final_attenuation * emitted;
-
-                if let Some((albedo, normal, scattered_ray, pdf)) = mat.scatter(&ray_to_use, &hit) {
-                    let brdf = albedo * mat.scattering_pdf(&ray, &hit, &scattered_ray);
-                    final_attenuation *= brdf / pdf;
-                    ray_to_use = scattered_ray;
-
-                    //remember albedo and normal for the first object hit
-                    if out_albedo.is_none() {
-                        out_albedo = Some(albedo);
-                    }
-                    if out_normal.is_none() {
-                        out_normal = Some(normal);
-                    }
-                }
-            } else {
-                panic!("How did you manage to not have a material!?");
-            }
-        }
-
-        //calculate uv coords from ray direction
-        let x = ray_to_use.direction.x;
-        let z = ray_to_use.direction.z;
-        let u = 1.0 - ((z.atan2(x) + std::f32::consts::PI) / (2.0 * std::f32::consts::PI));
-
-        let y = -ray_to_use.direction.y.min(1.0).max(-1.0); //clamp to [-1, 1] just in case (asin might return nan)
-        let v = (y.asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
-
-        let skycolor = self.sky.texture((u, v));
-        //let skycolor = Vec3::rgb(0,0,0);
-
-        if out_albedo.is_none() {
-            out_albedo = Some(skycolor)
-        }
-        if out_normal.is_none() {
-            out_normal = Some(-ray_to_use.direction.normalised())
-            //out_normal = Some(Vec3::rgb(0,0,0));
-        }
-
-        out_color += skycolor * final_attenuation;
-        (out_color, out_albedo.unwrap(), out_normal.unwrap())
     }
 }
