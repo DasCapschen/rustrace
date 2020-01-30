@@ -205,16 +205,26 @@ impl Hit for Plane {
 
     fn bounding_box(&self) -> Option<AABB> {
         //give the bb some height!
-        let normal = self.span_a.cross(self.span_b);
-        let epsilon = normal;
+        let normal = self.span_a.cross(self.span_b).normalised();
+        let epsilon = normal * 0.0001;
 
-        Some(AABB::new(
-            self.llc - epsilon,
-            self.llc + self.span_a + self.span_b + epsilon,
-        ))
+        if self.triangle {
+            let max_x = self.span_a.x.max(self.span_b.x);
+            let max_y = self.span_a.y.max(self.span_b.y);
+            let max_z = self.span_a.z.max(self.span_b.z);
+            Some(AABB::new(
+                self.llc - epsilon,
+                self.llc + Vec3::new(max_x, max_y, max_z) + epsilon,
+            ))
+        } else {
+            Some(AABB::new(
+                self.llc - epsilon,
+                self.llc + self.span_a + self.span_b + epsilon,
+            ))
+        }
     }
 
     fn center(&self) -> Vec3 {
-        self.llc
+        self.bounding_box().unwrap().center()
     }
 }
