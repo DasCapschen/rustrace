@@ -11,6 +11,13 @@ pub struct AABB {
     end: Vec3,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
+
 impl AABB {
     /// Creates a new AABB
     /// # Arguments
@@ -38,6 +45,18 @@ impl AABB {
                 box1.end.y.max(box2.end.y),
                 box1.end.z.max(box2.end.z),
             ),
+        }
+    }
+
+    pub fn longest_axis(&self) -> Axis {
+        let dim = self.end - self.start;
+
+        if dim.x > dim.y && dim.x > dim.z {
+            Axis::X
+        } else if dim.y > dim.z {
+            Axis::Y
+        } else {
+            Axis::Z
         }
     }
 }

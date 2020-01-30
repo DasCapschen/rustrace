@@ -1,5 +1,5 @@
 use crate::hit::{Hit, HitResult};
-use crate::hittables::aabb::AABB;
+use crate::hittables::aabb::{AABB, Axis};
 use crate::math::vec3::Vec3;
 use crate::ray::Ray;
 
@@ -46,13 +46,14 @@ impl<T: Hit> BvhTree<T> {
     }
 
     fn build_subtree(&mut self, index: u32, mut list: Vec<T>) {
-        //sort list along some (random) axis
-        let i: u32 = rand::random::<u32>() % 3;
-        match i {
-            0 => list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
-            1 => list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
-            2 => list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
-            _ => unreachable!(),
+        //sort by longest axis instead of randomly
+        //thus, with each division, we maximise the effect the bvh has!
+        //this cut the rendering time roughly in half!
+        let bb = list.bounding_box().unwrap();
+        match bb.longest_axis() {
+            Axis::X => list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
+            Axis::Y => list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
+            Axis::Z => list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
         }
 
         match list.len() {
@@ -63,7 +64,7 @@ impl<T: Hit> BvhTree<T> {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 1;
-            }
+            },
             2 => {
                 let left = self.objects.len() as u32;
 
@@ -72,7 +73,7 @@ impl<T: Hit> BvhTree<T> {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 2;
-            }
+            },
             _ => {
                 let left = self.nodes.len() as u32;
 
@@ -82,7 +83,7 @@ impl<T: Hit> BvhTree<T> {
                 let right_list = list.split_off(list.len() / 2);
 
                 self.nodes.push(BvhNode {
-                    bb: list.bounding_box().unwrap(),
+                    bb,
                     left: 0,
                     count: 0,
                 });
