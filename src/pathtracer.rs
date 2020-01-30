@@ -168,7 +168,7 @@ impl PathTracer {
 
                 if out_albedo.is_none() { out_albedo = Some(albedo) }
                 if out_normal.is_none() { out_normal = Some(normal) }
-                if out_depth.is_none() { out_depth = Some(1.0 / (1.0 + hit.ray_param)) }
+                if out_depth.is_none() { out_depth = Some(1.0/hit.ray_param) } // x/0 = inf !
             }
         }
 

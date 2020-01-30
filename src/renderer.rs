@@ -280,11 +280,11 @@ impl Renderer {
             println!("Denoising took {:?}", denoise_time.elapsed());
 
             let pp_buffer = match &self.display_mode {
-                Denoised => &denoise_buffer,
-                Color => &self.color_buffer,
-                Albedo => &self.albedo_buffer,
-                Normal => &self.normal_buffer,
-                Depth => &self.depth_buffer,
+                DisplayMode::Denoised => &denoise_buffer,
+                DisplayMode::Color    => &self.color_buffer,
+                DisplayMode::Albedo   => &self.albedo_buffer,
+                DisplayMode::Normal   => &self.normal_buffer,
+                DisplayMode::Depth    => &self.depth_buffer,
             };
 
             let convert_time = Instant::now();
