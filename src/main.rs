@@ -1,8 +1,8 @@
 use crate::renderer::Renderer;
 
 mod camera;
-mod ray;
 mod pathtracer;
+mod ray;
 mod renderer;
 
 mod gfx {

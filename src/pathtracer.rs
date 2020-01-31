@@ -128,7 +128,12 @@ impl PathTracer {
                 self.set_pixel(color_buf, x, y, final_color);
                 self.set_pixel(albedo_buf, x, y, final_albedo);
                 self.set_pixel(normal_buf, x, y, final_normal);
-                self.set_pixel(depth_buf, x, y, Vec3::new(final_depth, final_depth, final_depth));
+                self.set_pixel(
+                    depth_buf,
+                    x,
+                    y,
+                    Vec3::new(final_depth, final_depth, final_depth),
+                );
             }
         }
     }
@@ -160,7 +165,10 @@ impl PathTracer {
             }
             bounces += 1;
 
-            let mat = hit.material.as_ref().expect("How did you manage to not have a material?!");
+            let mat = hit
+                .material
+                .as_ref()
+                .expect("How did you manage to not have a material?!");
 
             //emitted is even added if we do not scatter!
             let emitted = mat.emitted();
@@ -171,9 +179,15 @@ impl PathTracer {
                 final_attenuation *= brdf / pdf;
                 ray_to_use = scattered_ray;
 
-                if out_albedo.is_none() { out_albedo = Some(albedo) }
-                if out_normal.is_none() { out_normal = Some(normal) }
-                if out_depth.is_none() { out_depth = Some(1.0/hit.ray_param) } // x/0 = inf !
+                if out_albedo.is_none() {
+                    out_albedo = Some(albedo)
+                }
+                if out_normal.is_none() {
+                    out_normal = Some(normal)
+                }
+                if out_depth.is_none() {
+                    out_depth = Some(1.0 / hit.ray_param)
+                } // x/0 = inf !
             }
         }
 
@@ -188,11 +202,22 @@ impl PathTracer {
 
         let skycolor = self.sky.texture((u, v));
 
-        if out_albedo.is_none() { out_albedo = Some(skycolor) }
-        if out_normal.is_none() { out_normal = Some(-ray_to_use.direction) }
-        if out_depth.is_none() { out_depth = Some(0.0) }
+        if out_albedo.is_none() {
+            out_albedo = Some(skycolor)
+        }
+        if out_normal.is_none() {
+            out_normal = Some(-ray_to_use.direction)
+        }
+        if out_depth.is_none() {
+            out_depth = Some(0.0)
+        }
 
         out_color += skycolor * final_attenuation;
-        (out_color, out_albedo.unwrap(), out_normal.unwrap(), out_depth.unwrap())
+        (
+            out_color,
+            out_albedo.unwrap(),
+            out_normal.unwrap(),
+            out_depth.unwrap(),
+        )
     }
 }

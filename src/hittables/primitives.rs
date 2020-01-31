@@ -132,7 +132,7 @@ impl Hit for Sphere {
 #[derive(Clone)]
 pub struct Triangle {
     // +
-    // ↑ \ 
+    // ↑ \
     // b   \
     // |     \
     // *--a-->+

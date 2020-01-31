@@ -1,5 +1,5 @@
 use crate::hit::{Hit, HitResult};
-use crate::hittables::aabb::{AABB, Axis};
+use crate::hittables::aabb::{Axis, AABB};
 use crate::math::vec3::Vec3;
 use crate::ray::Ray;
 
@@ -51,9 +51,15 @@ impl<T: Hit> BvhTree<T> {
         //this cut the rendering time roughly in half!
         let bb = list.bounding_box().unwrap();
         match bb.longest_axis() {
-            Axis::X => list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap()),
-            Axis::Y => list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap()),
-            Axis::Z => list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap()),
+            Axis::X => {
+                list.sort_unstable_by(|a, b| a.center().x.partial_cmp(&b.center().x).unwrap())
+            }
+            Axis::Y => {
+                list.sort_unstable_by(|a, b| a.center().y.partial_cmp(&b.center().y).unwrap())
+            }
+            Axis::Z => {
+                list.sort_unstable_by(|a, b| a.center().z.partial_cmp(&b.center().z).unwrap())
+            }
         }
 
         match list.len() {
@@ -64,7 +70,7 @@ impl<T: Hit> BvhTree<T> {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 1;
-            },
+            }
             2 => {
                 let left = self.objects.len() as u32;
 
@@ -73,7 +79,7 @@ impl<T: Hit> BvhTree<T> {
 
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 2;
-            },
+            }
             _ => {
                 let left = self.nodes.len() as u32;
 
@@ -81,12 +87,11 @@ impl<T: Hit> BvhTree<T> {
                 self.nodes[index as usize].count = 0;
 
                 //make sure we always split into EVEN sublists!
-                let mut right_list = if (list.len()/2) % 2 == 0 {
+                let right_list = if (list.len() / 2) % 2 == 0 {
                     list.split_off(list.len() / 2)
                 } else {
                     list.split_off((list.len() / 2) + 1)
                 };
-                 
 
                 self.nodes.push(BvhNode {
                     bb: list.bounding_box().unwrap(), //recalculate bounding box! list changed!!!
@@ -110,7 +115,7 @@ impl<T: Hit> BvhTree<T> {
         let node = &self.nodes[idx as usize];
 
         //only proceed if the bounding box was hit
-        if let Some(hr) = node.bb.hit(ray, t_min, t_max) {
+        if let Some(_hr) = node.bb.hit(ray, t_min, t_max) {
             //early stop if single leaf
             if node.count == 1 {
                 return self.objects[node.left as usize].hit(ray, t_min, t_max);
@@ -166,7 +171,13 @@ impl<T: Hit> BvhTree<T> {
         self.nodes[idx].left as usize + 1
     }
 
-    pub fn debug_hit(&self, idx: usize, ray: &Ray, t_min: f32, t_max: f32) -> (Vec3, Vec3, Vec3, f32) {
+    pub fn debug_hit(
+        &self,
+        idx: usize,
+        ray: &Ray,
+        t_min: f32,
+        t_max: f32,
+    ) -> (Vec3, Vec3, Vec3, f32) {
         let node = &self.nodes[idx];
 
         let root_hit = node.bb.hit(ray, t_min, t_max);
@@ -178,15 +189,22 @@ impl<T: Hit> BvhTree<T> {
                 1.0 / hit.ray_param,
             )
         } else {
-            (Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), 0.0)
+            (
+                Vec3::rgb(0, 0, 0),
+                Vec3::rgb(0, 0, 0),
+                Vec3::rgb(0, 0, 0),
+                0.0,
+            )
         };
 
         if root_hit.is_some() {
-
             let (left_hit, right_hit) = if node.count == 0 {
                 let left_node = &self.nodes[node.left as usize];
-                let right_node = &self.nodes[node.left as usize +1];
-                (left_node.bb.hit(ray, t_min, t_max), right_node.bb.hit(ray, t_min, t_max))
+                let right_node = &self.nodes[node.left as usize + 1];
+                (
+                    left_node.bb.hit(ray, t_min, t_max),
+                    right_node.bb.hit(ray, t_min, t_max),
+                )
             } else if node.count == 1 {
                 let left = &self.objects[node.left as usize];
                 (left.hit(ray, t_min, t_max), None)
@@ -216,17 +234,17 @@ impl<T: Hit> BvhTree<T> {
                     albedo = color;
                     normal = lh.normal;
                     depth = 1.0 / lh.ray_param;
-                },
+                }
                 (None, Some(rh)) => {
                     color = Vec3::rgb(0, 0, 255);
                     albedo = color;
                     normal = rh.normal;
                     depth = 1.0 / rh.ray_param;
-                },
-                _ => {},
+                }
+                _ => {}
             };
         }
-        
+
         (color, albedo, normal, depth)
     }
 }

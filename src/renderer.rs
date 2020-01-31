@@ -1,17 +1,16 @@
-use sdl2::video::Window;
-use crate::pathtracer::PathTracer;
-use std::sync::Arc;
-use crate::gfx::texture::{ImageTexture, ConstantTexture};
 use crate::camera::Camera;
-use crate::math::vec3::Vec3;
-use crate::hittables::mesh::Mesh;
 use crate::gfx::material::{Material, Metallic};
-use sdl2::{EventPump, Sdl};
-use std::time::Instant;
+use crate::gfx::texture::{ConstantTexture, ImageTexture};
+use crate::hittables::mesh::Mesh;
+use crate::math::vec3::Vec3;
+use crate::pathtracer::PathTracer;
 use scoped_threadpool::Pool;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::task::Context;
+use sdl2::video::Window;
+use sdl2::{EventPump, Sdl};
+use std::sync::Arc;
+use std::time::Instant;
 
 enum DisplayMode {
     Denoised,
@@ -50,11 +49,11 @@ impl Renderer {
         //sdl2_context.mouse().set_relative_mouse_mode(true);
 
         //create a window
-         let window = video_subsystem
-             .window("Raytracer", width, height)
-             .position_centered()
-             .build()
-             .unwrap();
+        let window = video_subsystem
+            .window("Raytracer", width, height)
+            .position_centered()
+            .build()
+            .unwrap();
 
         //setup the camera here
         let pos = Vec3::new(-1.0, 0.5, 0.0);
@@ -65,8 +64,9 @@ impl Renderer {
             /*fov: */ 90.0,
             /*w: */ width as i32,
             /*h: */ height as i32,
-            /*focus: */ 1.0,    //if aperture == 0 focus dist is irrelevant
-            /*aperture: */ 0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+            /*focus: */ 1.0, //if aperture == 0 focus dist is irrelevant
+            /*aperture: */
+            0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
         );
 
         // https://hdrihaven.com/
@@ -95,46 +95,79 @@ impl Renderer {
     fn handle_sdl_events(&mut self, event_pump: &mut EventPump) {
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }
-                => self.running = false,
-                Event::KeyDown { keycode: Some(Keycode::W), .. }
-                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.forward(),
-                Event::KeyDown { keycode: Some(Keycode::S), .. }
-                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.forward(),
-                Event::KeyDown { keycode: Some(Keycode::D), .. }
-                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right(),
-                Event::KeyDown { keycode: Some(Keycode::A), .. }
-                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right(),
-                Event::KeyDown { keycode: Some(Keycode::Space), .. }
-                => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up(),
-                Event::KeyDown { keycode: Some(Keycode::C), .. }
-                => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up(),
-                Event::KeyDown { keycode: Some(Keycode::F1), .. }
-                => self.display_mode = DisplayMode::Denoised,
-                Event::KeyDown { keycode: Some(Keycode::F2), .. }
-                => self.display_mode = DisplayMode::Color,
-                Event::KeyDown { keycode: Some(Keycode::F3), .. }
-                => self.display_mode = DisplayMode::Albedo,
-                Event::KeyDown { keycode: Some(Keycode::F4), .. }
-                => self.display_mode = DisplayMode::Normal,
-                Event::KeyDown { keycode: Some(Keycode::F5), .. }
-                => self.display_mode = DisplayMode::Depth,
-                Event::KeyDown { keycode: Some(Keycode::Up), .. }
-                => self.path_tracer.debug_index = Some(0),
-                Event::KeyDown { keycode: Some(Keycode::Down), .. }
-                => self.path_tracer.debug_index = None,
-                Event::KeyDown { keycode: Some(Keycode::Left), .. } 
-                =>  {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => self.running = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::W),
+                    ..
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.forward(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.forward(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::C),
+                    ..
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up(),
+                Event::KeyDown {
+                    keycode: Some(Keycode::F1),
+                    ..
+                } => self.display_mode = DisplayMode::Denoised,
+                Event::KeyDown {
+                    keycode: Some(Keycode::F2),
+                    ..
+                } => self.display_mode = DisplayMode::Color,
+                Event::KeyDown {
+                    keycode: Some(Keycode::F3),
+                    ..
+                } => self.display_mode = DisplayMode::Albedo,
+                Event::KeyDown {
+                    keycode: Some(Keycode::F4),
+                    ..
+                } => self.display_mode = DisplayMode::Normal,
+                Event::KeyDown {
+                    keycode: Some(Keycode::F5),
+                    ..
+                } => self.display_mode = DisplayMode::Depth,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => self.path_tracer.debug_index = Some(0),
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => self.path_tracer.debug_index = None,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => {
                     let bvh = self.path_tracer.bvh.as_ref().unwrap();
                     let idx = self.path_tracer.debug_index.unwrap();
                     self.path_tracer.debug_index = Some(bvh.get_left_node_index(idx));
-                },
-                Event::KeyDown { keycode: Some(Keycode::Right), .. } 
-                =>  {
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => {
                     let bvh = self.path_tracer.bvh.as_ref().unwrap();
                     let idx = self.path_tracer.debug_index.unwrap();
                     self.path_tracer.debug_index = Some(bvh.get_right_node_index(idx));
-                },
+                }
                 _ => {}
             }
         }
@@ -188,7 +221,7 @@ impl Renderer {
         };*/
 
         let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-        let material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
+        let _material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
 
         /*renderer.add_object(Arc::new(Sphere {
             center: Vec3::new(0.0, 0.0, 0.0),
@@ -196,7 +229,8 @@ impl Renderer {
             material: material
         }));*/
 
-        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
+        self.path_tracer
+            .add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
 
         // DO NOT CHANGE STUFF AFTER THIS COMMENT
 
@@ -278,7 +312,8 @@ impl Renderer {
                             albedo_slice,
                             normal_slice,
                             depth_slice,
-                            i * len);
+                            i * len,
+                        );
                     });
                 }
             });
@@ -287,20 +322,22 @@ impl Renderer {
             //denoise image
             let denoise_time = Instant::now();
             let mut denoise_buffer = vec![0f32; self.color_buffer.len()];
-            denoise_filter.execute(
-                &self.color_buffer[..],
-                Some(&self.albedo_buffer[..]),
-                Some(&self.normal_buffer[..]),
-                &mut denoise_buffer[..],
-            ).expect("failed to denoise image");
+            denoise_filter
+                .execute(
+                    &self.color_buffer[..],
+                    Some(&self.albedo_buffer[..]),
+                    Some(&self.normal_buffer[..]),
+                    &mut denoise_buffer[..],
+                )
+                .expect("failed to denoise image");
             println!("Denoising took {:?}", denoise_time.elapsed());
 
             let pp_buffer = match &self.display_mode {
                 DisplayMode::Denoised => &denoise_buffer,
-                DisplayMode::Color    => &self.color_buffer,
-                DisplayMode::Albedo   => &self.albedo_buffer,
-                DisplayMode::Normal   => &self.normal_buffer,
-                DisplayMode::Depth    => &self.depth_buffer,
+                DisplayMode::Color => &self.color_buffer,
+                DisplayMode::Albedo => &self.albedo_buffer,
+                DisplayMode::Normal => &self.normal_buffer,
+                DisplayMode::Depth => &self.depth_buffer,
             };
 
             let convert_time = Instant::now();
