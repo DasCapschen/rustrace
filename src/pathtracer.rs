@@ -16,7 +16,8 @@ pub struct PathTracer {
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
-    bvh: Option<BvhTree<Arc<dyn Hit>>>,
+    pub bvh: Option<BvhTree<Arc<dyn Hit>>>,
+    pub debug_index: Option<usize>,
 }
 
 impl PathTracer {
@@ -35,6 +36,7 @@ impl PathTracer {
             objects: Vec::new(),
             sky,
             bvh: None,
+            debug_index: None,
         }
     }
 
@@ -103,8 +105,11 @@ impl PathTracer {
                         (y + y_offset) as f32 + rng.gen_range(0.0, 1.0),
                     );
 
-                    let (color, albedo, normal, depth)
-                        = self.trace_color(&ray, bvh);
+                    let (color, albedo, normal, depth) = if let Some(idx) = self.debug_index {
+                        bvh.debug_hit(idx, &ray, 0.0001, std::f32::MAX)
+                    } else {
+                        self.trace_color(&ray, bvh)
+                    };
 
                     final_color += color;
 
@@ -142,7 +147,7 @@ impl PathTracer {
         let mut final_attenuation = Vec3::new(1.0, 1.0, 1.0);
 
         let mut bounces: u32 = 0;
-        const MAX_BOUNCES: u32 = std::u32::MAX;
+        const MAX_BOUNCES: u32 = 100;
 
         let mut out_color = Vec3::new(0.0, 0.0, 0.0);
         let mut out_albedo = None;

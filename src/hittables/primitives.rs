@@ -213,13 +213,13 @@ impl Hit for Plane {
             let max_y = self.span_a.y.max(self.span_b.y);
             let max_z = self.span_a.z.max(self.span_b.z);
             Some(AABB::new(
-                self.llc - epsilon,
-                self.llc + Vec3::new(max_x, max_y, max_z) + epsilon,
+                self.llc,
+                self.llc + Vec3::new(max_x, max_y, max_z),
             ))
         } else {
             Some(AABB::new(
-                self.llc - epsilon,
-                self.llc + self.span_a + self.span_b + epsilon,
+                self.llc,
+                self.llc + self.span_a + self.span_b,
             ))
         }
     }

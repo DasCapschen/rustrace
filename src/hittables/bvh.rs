@@ -148,6 +148,80 @@ impl<T: Hit> BvhTree<T> {
             None
         }
     }
+
+    pub fn get_left_node_index(&self, idx: usize) -> usize {
+        if self.nodes[idx].count != 0 {
+            panic!("dont do that");
+        }
+
+        self.nodes[idx].left as usize
+    }
+
+    pub fn get_right_node_index(&self, idx: usize) -> usize {
+        if self.nodes[idx].count != 0 {
+            panic!("dont do that");
+        }
+        self.nodes[idx].left as usize + 1
+    }
+
+    pub fn debug_hit(&self, idx: usize, ray: &Ray, t_min: f32, t_max: f32) -> (Vec3, Vec3, Vec3, f32) {
+        let node = &self.nodes[idx];
+
+        let root_hit = node.bb.hit(ray, t_min, t_max);
+        let (mut color, mut albedo, mut normal, mut depth) = if let Some(hit) = &root_hit {
+            (
+                Vec3::rgb(255, 0, 0),
+                Vec3::rgb(255, 0, 0),
+                hit.normal,
+                1.0 / hit.ray_param,
+            )
+        } else {
+            (Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), 0.0)
+        };
+
+        if root_hit.is_some() && node.count == 0 {
+            let left_node = &self.nodes[node.left as usize];
+            let right_node = &self.nodes[node.left as usize +1];
+
+            //hit children
+            let (left_hit, right_hit) = (
+                left_node.bb.hit(ray, t_min, t_max),
+                right_node.bb.hit(ray, t_min, t_max)
+            );
+
+            //get closer hit
+            match (left_hit, right_hit) {
+                (Some(lh), Some(rh)) => {
+                    if lh.ray_param < rh.ray_param {
+                        color = Vec3::rgb(0, 255, 0);
+                        albedo = color;
+                        normal = lh.normal;
+                        depth = 1.0 / lh.ray_param;
+                    } else {
+                        color = Vec3::rgb(0, 0, 255);
+                        albedo = color;
+                        normal = rh.normal;
+                        depth = 1.0 / rh.ray_param;
+                    }
+                }
+                (Some(lh), None) => {
+                    color = Vec3::rgb(0, 255, 0);
+                    albedo = color;
+                    normal = lh.normal;
+                    depth = 1.0 / lh.ray_param;
+                },
+                (None, Some(rh)) => {
+                    color = Vec3::rgb(0, 0, 255);
+                    albedo = color;
+                    normal = rh.normal;
+                    depth = 1.0 / rh.ray_param;
+                },
+                _ => {},
+            };
+        }
+        
+        (color, albedo, normal, depth)
+    }
 }
 
 impl<T: Hit> Hit for BvhTree<T> {

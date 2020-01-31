@@ -25,11 +25,22 @@ impl AABB {
     /// * `end` - the upper right back corner of the box
     pub fn new(mut start: Vec3, mut end: Vec3) -> Self {
         //start < end !
-        if start.len_squared() > end.len_squared() {
+        /*if start.len_squared() > end.len_squared() {
             std::mem::swap(&mut start, &mut end);
-        }
+        }*/
 
-        Self { start, end }
+        let s = Vec3 {
+            x: start.x.min(end.x),
+            y: start.y.min(end.y),
+            z: start.z.min(end.z)
+        };
+        let e = Vec3 {
+            x: end.x.max(start.x),
+            y: end.y.max(start.y),
+            z: end.z.max(start.z)
+        };
+
+        Self { start: s, end: e }
     }
 
     /// Returns a new AABB which surrounds both given AABBs

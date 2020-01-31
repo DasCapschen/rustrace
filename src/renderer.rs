@@ -56,7 +56,7 @@ impl Renderer {
              .build()
              .unwrap();
 
-        /// setup the camera here
+        //setup the camera here
         let pos = Vec3::new(-1.0, 1.0, 1.0);
         let target = Vec3::new(0.0, 0.5, 0.0);
         let camera = Camera::new(
@@ -72,7 +72,7 @@ impl Renderer {
         // https://hdrihaven.com/
         let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
 
-        /// create the renderer
+        //create the renderer
         let path_tracer = PathTracer::new(width as i32, height as i32, 1, camera, skybox);
 
         let buffer_size = (width * height * 3) as usize;
@@ -119,6 +119,22 @@ impl Renderer {
                 => self.display_mode = DisplayMode::Normal,
                 Event::KeyDown { keycode: Some(Keycode::F5), .. }
                 => self.display_mode = DisplayMode::Depth,
+                Event::KeyDown { keycode: Some(Keycode::Up), .. }
+                => self.path_tracer.debug_index = Some(0),
+                Event::KeyDown { keycode: Some(Keycode::Down), .. }
+                => self.path_tracer.debug_index = None,
+                Event::KeyDown { keycode: Some(Keycode::Left), .. } 
+                =>  {
+                    let bvh = self.path_tracer.bvh.as_ref().unwrap();
+                    let idx = self.path_tracer.debug_index.unwrap();
+                    self.path_tracer.debug_index = Some(bvh.get_left_node_index(idx));
+                },
+                Event::KeyDown { keycode: Some(Keycode::Right), .. } 
+                =>  {
+                    let bvh = self.path_tracer.bvh.as_ref().unwrap();
+                    let idx = self.path_tracer.debug_index.unwrap();
+                    self.path_tracer.debug_index = Some(bvh.get_right_node_index(idx));
+                },
                 _ => {}
             }
         }
@@ -180,9 +196,14 @@ impl Renderer {
             material: material
         }));*/
 
-        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/cube.obj")));
+        //load mesh as individual triangles instead of 1 object
+        //necessary to check bvh
+        let mesh = Mesh::new("res/models/cube.obj");
+        for f in mesh.faces {
+            self.path_tracer.add_object(Arc::new(f));
+        }
 
-        /// DO NOT CHANGE STUFF AFTER THIS COMMENT
+        // DO NOT CHANGE STUFF AFTER THIS COMMENT
 
         //creates bvh and leaves the scene immutable (ownership moved to bvh)
         let finalise_time = Instant::now();
@@ -192,7 +213,7 @@ impl Renderer {
     }
 
     /// does gamma correction and converts f32-RGB to u8-BGRA
-    fn post_process(raw: &Vec<f32>) -> Vec<u8> {
+    fn post_process(raw: &[f32]) -> Vec<u8> {
         //RGB => BGRA
         raw.chunks(3)
             .map(|chunk| {

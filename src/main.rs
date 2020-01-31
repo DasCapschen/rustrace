@@ -43,8 +43,6 @@ mod hittables {
 }
 
 fn main() {
-    let mut renderer = Renderer::new(800, 600);
-    let mut renderer = renderer.build_scene();
+    let mut renderer = Renderer::new(800, 600).build_scene();
     renderer.run();
 }
-

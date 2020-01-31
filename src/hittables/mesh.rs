@@ -14,8 +14,8 @@ use crate::ray::Ray;
 #[derive(Clone)]
 pub struct Mesh {
     position: Vec3,
-    faces: BvhTree<Plane>,
-    //faces: Vec<Plane>
+    //faces: BvhTree<Plane>,
+    pub faces: Vec<Plane>
 }
 
 impl Mesh {
@@ -64,11 +64,11 @@ impl Mesh {
             })
             .collect();
 
-        let bvh = BvhTree::from_hittables(mesh);
+        //let bvh = BvhTree::from_hittables(mesh);
 
         Mesh {
             position: Vec3::new(0.0, 0.0, 0.0),
-            faces: bvh,
+            faces: mesh,
         }
     }
 }
