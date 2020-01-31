@@ -80,10 +80,10 @@ impl<T: Hit> BvhTree<T> {
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 0;
 
-                let right_list = list.split_off(list.len() / 2);
+                let mut right_list = list.split_off(list.len() / 2);
 
                 self.nodes.push(BvhNode {
-                    bb,
+                    bb: list.bounding_box().unwrap(), //recalculate bounding box! list changed!!!
                     left: 0,
                     count: 0,
                 });
@@ -107,7 +107,7 @@ impl<T: Hit> BvhTree<T> {
         if let Some(hr) = node.bb.hit(ray, t_min, t_max) {
             //limit t_max, we cannot hit anything *behind* the current hit!
             //aabb returns the *backside* of it, *not* the front
-            t_max = hr.ray_param;
+            t_max = (hr.hit_position - ray.origin).len();
 
             //early stop if single leaf
             if node.count == 1 {
@@ -179,15 +179,20 @@ impl<T: Hit> BvhTree<T> {
             (Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), Vec3::rgb(0,0,0), 0.0)
         };
 
-        if root_hit.is_some() && node.count == 0 {
-            let left_node = &self.nodes[node.left as usize];
-            let right_node = &self.nodes[node.left as usize +1];
+        if root_hit.is_some() {
 
-            //hit children
-            let (left_hit, right_hit) = (
-                left_node.bb.hit(ray, t_min, t_max),
-                right_node.bb.hit(ray, t_min, t_max)
-            );
+            let (left_hit, right_hit) = if node.count == 0 {
+                let left_node = &self.nodes[node.left as usize];
+                let right_node = &self.nodes[node.left as usize +1];
+                (left_node.bb.hit(ray, t_min, t_max), right_node.bb.hit(ray, t_min, t_max))
+            } else if node.count == 1 {
+                let left = &self.objects[node.left as usize];
+                (left.hit(ray, t_min, t_max), None)
+            } else {
+                let left = &self.objects[node.left as usize];
+                let right = &self.objects[node.left as usize + 1];
+                (left.hit(ray, t_min, t_max), right.hit(ray, t_min, t_max))
+            };
 
             //get closer hit
             match (left_hit, right_hit) {

@@ -107,8 +107,8 @@ impl Hit for AABB {
         }
 
         Some(HitResult {
-            ray_param: t_max, //return the BACK side!
-            hit_position: ray.origin + t_max * ray.origin,
+            ray_param: t_min, //front hit
+            hit_position: ray.origin + t_max * ray.origin, //back hit
             normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?
             material: None,
             uv_coords: None,
