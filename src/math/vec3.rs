@@ -334,7 +334,7 @@ impl<'a> Sum<&'a Vec3> for Vec3 {
     fn sum<I: Iterator<Item = &'a Vec3>>(iter: I) -> Vec3 {
         let mut result = Vec3::new(0.0, 0.0, 0.0);
         for v in iter {
-            result = result + *v;
+            result += *v;
         }
         result
     }

@@ -25,6 +25,11 @@ mod hittables {
     pub mod primitives;
 }
 
+
+const WIDTH: u32 = 800;
+const HEIGHT: u32 = 600;
+const SAMPLES: u32 = 16;
+
 fn main() {
-    Renderer::new(800, 600).build_scene().run();
+    Renderer::new(WIDTH, HEIGHT, SAMPLES).build_scene().run();
 }

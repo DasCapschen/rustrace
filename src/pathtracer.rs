@@ -10,9 +10,9 @@ use crate::ray::Ray;
 
 #[derive(Clone)]
 pub struct PathTracer {
-    width: i32,
-    height: i32,
-    samples: u8,
+    width: u32,
+    height: u32,
+    samples: u32,
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
@@ -22,9 +22,9 @@ pub struct PathTracer {
 
 impl PathTracer {
     pub fn new(
-        width: i32,
-        height: i32,
-        samples: u8,
+        width: u32,
+        height: u32,
+        samples: u32,
         camera: Camera,
         sky: Arc<dyn Texture>,
     ) -> Self {
@@ -56,13 +56,13 @@ impl PathTracer {
         self
     }
 
-    fn set_pixel(&self, buf: &mut [f32], x: i32, y: i32, color: Vec3) {
+    fn set_pixel(&self, buf: &mut [f32], x: u32, y: u32, color: Vec3) {
         let x_stride = 3; //because 3 color values
         let y_stride = self.width * x_stride; //because every width pixel has 3 color values
 
-        const R: i32 = 0;
-        const G: i32 = 1;
-        const B: i32 = 2;
+        const R: u32 = 0;
+        const G: u32 = 1;
+        const B: u32 = 2;
 
         let position = (x * x_stride) + (y * y_stride);
 
@@ -83,8 +83,8 @@ impl PathTracer {
         let y_max = color_buf.len() / self.width as usize / 3;
 
         let offset = offset / 3; //RGB
-        let y_offset = (offset / self.width as usize) as i32; // /width because line width
-        let x_offset = (offset % (self.width as usize)) as i32;
+        let y_offset = (offset / self.width as usize) as u32; // /width because line width
+        let x_offset = (offset % (self.width as usize)) as u32;
 
         //draw image
         let mut rng = rand::thread_rng();
@@ -92,7 +92,7 @@ impl PathTracer {
         let bvh = self.bvh.as_ref().expect("did not call finalise()!");
 
         for x in 0..self.width {
-            for y in 0..y_max as i32 {
+            for y in 0..y_max as u32 {
                 let mut final_color = Vec3::rgb(0, 0, 0);
                 let mut final_albedo = Vec3::rgb(0, 0, 0);
                 let mut final_normal = Vec3::rgb(0, 0, 0);

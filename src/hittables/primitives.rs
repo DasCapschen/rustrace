@@ -83,17 +83,17 @@ impl Hit for Sphere {
             None
         } else {
             //check smaller t first, but if its out of range, check bigger t
-            let mut t = (-b - root.sqrt()) / (a);
-            if t > t_max || t < t_min {
-                t = (-b + root.sqrt()) / (a);
+            let mut parameter = (-b - root.sqrt()) / (a);
+            if parameter > t_max || parameter < t_min {
+                parameter = (-b + root.sqrt()) / (a);
             }
 
             //if t is out of range, no hit
-            if t > t_max || t < t_min {
+            if parameter > t_max || parameter < t_min {
                 return None;
             }
 
-            let hit_position = ray.point_at(t);
+            let hit_position = ray.point_at(parameter);
 
             //divide by radius instead of .normalise() => can invert normals with negative radius
             let normal = (hit_position - self.center) / self.radius;
@@ -106,7 +106,7 @@ impl Hit for Sphere {
             let v = ((-normal.y).asin() + std::f32::consts::FRAC_PI_2) / std::f32::consts::PI;
 
             Some(HitResult {
-                ray_param: t,
+                ray_param: parameter,
                 hit_position,
                 normal,
                 material: Some(self.material.clone()),
@@ -167,7 +167,7 @@ impl Hit for Triangle {
             return None;
         }
 
-        let hit_position = ray.origin + parameter * ray.direction;
+        let hit_position = ray.point_at(parameter);
 
         //from lower left corner to hit
         let relative_hit = hit_position - self.llc;

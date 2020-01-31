@@ -40,7 +40,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(width: u32, height: u32) -> Self {
+    pub fn new(width: u32, height: u32, samples: u32) -> Self {
         //initialise SDL2
         let context = sdl2::init().unwrap();
         let video_subsystem = context.video().unwrap();
@@ -62,8 +62,8 @@ impl Renderer {
             /*pos: */ pos,
             /*dir: */ target - pos,
             /*fov: */ 90.0,
-            /*w: */ width as i32,
-            /*h: */ height as i32,
+            /*w: */ width,
+            /*h: */ height,
             /*focus: */ 1.0, //if aperture == 0 focus dist is irrelevant
             /*aperture: */
             0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
@@ -73,7 +73,7 @@ impl Renderer {
         let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
 
         //create the renderer
-        let path_tracer = PathTracer::new(width as i32, height as i32, 1, camera, skybox);
+        let path_tracer = PathTracer::new(width, height, samples, camera, skybox);
 
         let buffer_size = (width * height * 3) as usize;
         Renderer {

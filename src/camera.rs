@@ -11,9 +11,9 @@ pub struct Camera {
     /// the horizontal field of view
     fov: f32,
     /// the width of the rendered image
-    width: i32,
+    width: u32,
     /// the height of the rendered image
-    height: i32,
+    height: u32,
     /// the distance at which the camera focuses (only if aperture > 0)
     focus_dist: f32,
     /// the aperture of the camera, bigger number leads to more "depth of field" (blurryness)
@@ -33,8 +33,8 @@ impl Camera {
         position: Vec3,
         direction: Vec3,
         fov: f32,
-        width: i32,
-        height: i32,
+        width: u32,
+        height: u32,
         focus_dist: f32,
         aperture: f32,
     ) -> Self {

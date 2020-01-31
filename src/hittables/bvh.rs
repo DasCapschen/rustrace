@@ -115,7 +115,7 @@ impl<T: Hit> BvhTree<T> {
         let node = &self.nodes[idx as usize];
 
         //only proceed if the bounding box was hit
-        if let Some(_hr) = node.bb.hit(ray, t_min, t_max) {
+        if node.bb.hit(ray, t_min, t_max).is_some() {
             //early stop if single leaf
             if node.count == 1 {
                 return self.objects[node.left as usize].hit(ray, t_min, t_max);
@@ -156,6 +156,7 @@ impl<T: Hit> BvhTree<T> {
         }
     }
 
+    //debug
     pub fn get_left_node_index(&self, idx: usize) -> usize {
         if self.nodes[idx].count != 0 {
             panic!("dont do that");
@@ -164,6 +165,7 @@ impl<T: Hit> BvhTree<T> {
         self.nodes[idx].left as usize
     }
 
+    //debug
     pub fn get_right_node_index(&self, idx: usize) -> usize {
         if self.nodes[idx].count != 0 {
             panic!("dont do that");
@@ -171,6 +173,7 @@ impl<T: Hit> BvhTree<T> {
         self.nodes[idx].left as usize + 1
     }
 
+    //debug
     pub fn debug_hit(
         &self,
         idx: usize,

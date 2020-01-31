@@ -36,19 +36,19 @@ impl Mesh {
             .chunks(3)
             .map(|chunk| {
                 let v1 = Vec3 {
-                    x: models[0].mesh.positions[3 * chunk[0] as usize + 0],
+                    x: models[0].mesh.positions[3 * chunk[0] as usize],
                     y: models[0].mesh.positions[3 * chunk[0] as usize + 1],
                     z: models[0].mesh.positions[3 * chunk[0] as usize + 2],
                 };
 
                 let v2 = Vec3 {
-                    x: models[0].mesh.positions[3 * chunk[1] as usize + 0],
+                    x: models[0].mesh.positions[3 * chunk[1] as usize],
                     y: models[0].mesh.positions[3 * chunk[1] as usize + 1],
                     z: models[0].mesh.positions[3 * chunk[1] as usize + 2],
                 };
 
                 let v3 = Vec3 {
-                    x: models[0].mesh.positions[3 * chunk[2] as usize + 0],
+                    x: models[0].mesh.positions[3 * chunk[2] as usize],
                     y: models[0].mesh.positions[3 * chunk[2] as usize + 1],
                     z: models[0].mesh.positions[3 * chunk[2] as usize + 2],
                 };

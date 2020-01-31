@@ -59,10 +59,15 @@ impl AABB {
 
 impl Hit for AABB {
     fn hit(&self, ray: &Ray, mut t_min: f32, mut t_max: f32) -> Option<HitResult> {
+        //instead of dividing by direction, multiply by its inverse
+        let inverse_dx = 1.0 / ray.direction.x;
+        let inverse_dy = 1.0 / ray.direction.y;
+        let inverse_dz = 1.0 / ray.direction.z;
+
         //calculate intersection on YZ-plane
         //if direction.x is 0, because we're using floats, result is `inf`
-        let t0 = (self.start.x - ray.origin.x) / ray.direction.x;
-        let t1 = (self.end.x - ray.origin.x) / ray.direction.x;
+        let t0 = (self.start.x - ray.origin.x) * inverse_dx;
+        let t1 = (self.end.x - ray.origin.x) * inverse_dx;
 
         //limit tmin and tmax to the found interval.
         //if direction was negative, t0.min(t1) will swap the t's
@@ -71,16 +76,16 @@ impl Hit for AABB {
         t_max = t_max.min(t1.max(t0));
 
         //calculate intersection on XZ-plane
-        let t0 = (self.start.y - ray.origin.y) / ray.direction.y;
-        let t1 = (self.end.y - ray.origin.y) / ray.direction.y;
+        let t0 = (self.start.y - ray.origin.y) * inverse_dy;
+        let t1 = (self.end.y - ray.origin.y) * inverse_dy;
 
         //limit to interval
         t_min = t_min.max(t0.min(t1));
         t_max = t_max.min(t1.max(t0));
 
         //calculate intersection on XY-plane
-        let t0 = (self.start.z - ray.origin.z) / ray.direction.z;
-        let t1 = (self.end.z - ray.origin.z) / ray.direction.z;
+        let t0 = (self.start.z - ray.origin.z) * inverse_dz;
+        let t1 = (self.end.z - ray.origin.z) * inverse_dz;
 
         //limit to interval
         t_min = t_min.max(t0.min(t1));
@@ -93,7 +98,7 @@ impl Hit for AABB {
 
         Some(HitResult {
             ray_param: t_min,                                 //front hit
-            hit_position: ray.origin + t_max * ray.direction, //back hit
+            hit_position: ray.point_at(t_max),                //back hit
             normal: Vec3::new(0.0, 0.0, 0.0),                 //is this okay?
             material: None,
             uv_coords: None,
