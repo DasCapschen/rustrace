@@ -20,27 +20,12 @@ pub enum Axis {
 
 impl AABB {
     /// Creates a new AABB
+    /// You MUST make sure that start < end!
     /// # Arguments
     /// * `start` - the lower left front corner of the box
     /// * `end` - the upper right back corner of the box
-    pub fn new(mut start: Vec3, mut end: Vec3) -> Self {
-        //start < end !
-        /*if start.len_squared() > end.len_squared() {
-            std::mem::swap(&mut start, &mut end);
-        }*/
-
-        let s = Vec3 {
-            x: start.x.min(end.x),
-            y: start.y.min(end.y),
-            z: start.z.min(end.z)
-        };
-        let e = Vec3 {
-            x: end.x.max(start.x),
-            y: end.y.max(start.y),
-            z: end.z.max(start.z)
-        };
-
-        Self { start: s, end: e }
+    pub fn new(start: Vec3, end: Vec3) -> Self {
+        Self { start, end }
     }
 
     /// Returns a new AABB which surrounds both given AABBs
@@ -108,7 +93,7 @@ impl Hit for AABB {
 
         Some(HitResult {
             ray_param: t_min, //front hit
-            hit_position: ray.origin + t_max * ray.origin, //back hit
+            hit_position: ray.origin + t_max * ray.direction, //back hit
             normal: Vec3::new(0.0, 0.0, 0.0), //is this okay?
             material: None,
             uv_coords: None,

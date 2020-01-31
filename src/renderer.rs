@@ -57,8 +57,8 @@ impl Renderer {
              .unwrap();
 
         //setup the camera here
-        let pos = Vec3::new(-1.0, 1.0, 1.0);
-        let target = Vec3::new(0.0, 0.5, 0.0);
+        let pos = Vec3::new(-1.0, 0.5, 0.0);
+        let target = Vec3::new(0.0, 0.0, 0.0);
         let camera = Camera::new(
             /*pos: */ pos,
             /*dir: */ target - pos,
@@ -196,12 +196,7 @@ impl Renderer {
             material: material
         }));*/
 
-        //load mesh as individual triangles instead of 1 object
-        //necessary to check bvh
-        let mesh = Mesh::new("res/models/cube.obj");
-        for f in mesh.faces {
-            self.path_tracer.add_object(Arc::new(f));
-        }
+        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
 
         // DO NOT CHANGE STUFF AFTER THIS COMMENT
 

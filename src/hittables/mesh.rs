@@ -7,15 +7,14 @@ use std::sync::Arc;
 use crate::hit::{Hit, HitResult};
 use crate::hittables::aabb::AABB;
 use crate::hittables::bvh::BvhTree;
-use crate::hittables::primitives::Plane;
+use crate::hittables::primitives::Triangle;
 use crate::math::vec3::Vec3;
 use crate::ray::Ray;
 
 #[derive(Clone)]
 pub struct Mesh {
     position: Vec3,
-    //faces: BvhTree<Plane>,
-    pub faces: Vec<Plane>
+    faces: BvhTree<Triangle>,
 }
 
 impl Mesh {
@@ -31,7 +30,7 @@ impl Mesh {
         ));
 
         // just assume there is only 1 model in the obj!
-        let mesh: Vec<Plane> = models[0]
+        let mesh: Vec<Triangle> = models[0]
             .mesh
             .indices
             .chunks(3)
@@ -54,21 +53,20 @@ impl Mesh {
                     z: models[0].mesh.positions[3 * chunk[2] as usize + 2],
                 };
 
-                Plane {
+                Triangle {
                     llc: v1,
                     span_a: v2 - v1,
                     span_b: v3 - v1,
                     material: material.clone(),
-                    triangle: true,
                 }
             })
             .collect();
 
-        //let bvh = BvhTree::from_hittables(mesh);
+        let bvh = BvhTree::from_hittables(mesh);
 
         Mesh {
             position: Vec3::new(0.0, 0.0, 0.0),
-            faces: mesh,
+            faces: bvh,
         }
     }
 }

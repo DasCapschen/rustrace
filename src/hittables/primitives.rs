@@ -130,11 +130,11 @@ impl Hit for Sphere {
 /// represents a flat plane in 3d space
 /// infinite planes no longer work after introduction of BVH
 #[derive(Clone)]
-pub struct Plane {
-    // +------+
-    // ↑ \    |
-    // b   \  |
-    // |     \|
+pub struct Triangle {
+    // +
+    // ↑ \ 
+    // b   \
+    // |     \
     // *--a-->+
     // normal = a x b
     // width = 2 * |a|
@@ -147,11 +147,9 @@ pub struct Plane {
     pub span_b: Vec3,
     /// the material (color, etc) of the plane
     pub material: Arc<Material>,
-    /// whether or not this plane is a triangle
-    pub triangle: bool,
 }
 
-impl Hit for Plane {
+impl Hit for Triangle {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         // (x - llc) · normal = 0
         // x => ray(t) = origin + t * direction
@@ -190,7 +188,7 @@ impl Hit for Plane {
         let v = ((adb * rda) - (ada * rdb)) * denom;
 
         // u, v must be positive, smaller 1, and if a triangle, their sum must by < 1 too
-        if u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 || (self.triangle && (u + v) > 1.0) {
+        if u < 0.0 || v < 0.0 || (u + v) > 1.0 {
             None
         } else {
             Some(HitResult {
@@ -204,24 +202,22 @@ impl Hit for Plane {
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        //give the bb some height!
-        let normal = self.span_a.cross(self.span_b).normalised();
-        let epsilon = normal * 0.0001;
+        let a = self.llc;
+        let b = self.llc + self.span_a;
+        let c = self.llc + self.span_b;
 
-        if self.triangle {
-            let max_x = self.span_a.x.max(self.span_b.x);
-            let max_y = self.span_a.y.max(self.span_b.y);
-            let max_z = self.span_a.z.max(self.span_b.z);
-            Some(AABB::new(
-                self.llc,
-                self.llc + Vec3::new(max_x, max_y, max_z),
-            ))
-        } else {
-            Some(AABB::new(
-                self.llc,
-                self.llc + self.span_a + self.span_b,
-            ))
-        }
+        let max_x = a.x.max(b.x).max(c.x);
+        let max_y = a.y.max(b.y).max(c.y);
+        let max_z = a.z.max(b.z).max(c.z);
+
+        let min_x = a.x.min(b.x).min(c.x);
+        let min_y = a.y.min(b.y).min(c.y);
+        let min_z = a.z.min(b.z).min(c.z);
+
+        Some(AABB::new(
+            Vec3::new(min_x, min_y, min_z),
+            Vec3::new(max_x, max_y, max_z),
+        ))
     }
 
     fn center(&self) -> Vec3 {

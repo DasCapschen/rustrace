@@ -80,7 +80,13 @@ impl<T: Hit> BvhTree<T> {
                 self.nodes[index as usize].left = left;
                 self.nodes[index as usize].count = 0;
 
-                let mut right_list = list.split_off(list.len() / 2);
+                //make sure we always split into EVEN sublists!
+                let mut right_list = if (list.len()/2) % 2 == 0 {
+                    list.split_off(list.len() / 2)
+                } else {
+                    list.split_off((list.len() / 2) + 1)
+                };
+                 
 
                 self.nodes.push(BvhNode {
                     bb: list.bounding_box().unwrap(), //recalculate bounding box! list changed!!!
@@ -100,15 +106,11 @@ impl<T: Hit> BvhTree<T> {
         }
     }
 
-    fn hit_node(&self, idx: u32, ray: &Ray, t_min: f32, mut t_max: f32) -> Option<HitResult> {
+    fn hit_node(&self, idx: u32, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
         let node = &self.nodes[idx as usize];
 
         //only proceed if the bounding box was hit
         if let Some(hr) = node.bb.hit(ray, t_min, t_max) {
-            //limit t_max, we cannot hit anything *behind* the current hit!
-            //aabb returns the *backside* of it, *not* the front
-            t_max = (hr.hit_position - ray.origin).len();
-
             //early stop if single leaf
             if node.count == 1 {
                 return self.objects[node.left as usize].hit(ray, t_min, t_max);
