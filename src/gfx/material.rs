@@ -56,7 +56,7 @@ TODO: refactor the "scatter" method, break it into subfunctions and implement it
 */
 
 pub trait Material: Send + Sync {
-    fn emitted(&self, hit: &HitResult) -> Vec3 {
+    fn emitted(&self, _hit: &HitResult) -> Vec3 {
         Vec3::new(0.0, 0.0, 0.0)
     }
     fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)>;
@@ -100,7 +100,7 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
         let uv_coords = hit.uv_coords.unwrap();
         let normal = map_normal(self.normalmap.as_ref(), hit.normal, uv_coords);
 
@@ -114,7 +114,7 @@ impl Material for Lambertian {
         }
     }
 
-    fn scattered(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         let uv_coords = hit.uv_coords.unwrap();
 
         let normal = map_normal(self.normalmap.as_ref(), hit.normal, uv_coords);
@@ -162,10 +162,10 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+    fn scattering_pdf(&self, _ray: &Ray, _hit: &HitResult, _scattered_ray: &Ray) -> f32 {
         0.0
     }
-    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, _ray: &Ray, _hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         /*
         if let Metal(metal_params) = &self.metallic {
             //.x => red channel ; this texture should be grayscale !
@@ -214,7 +214,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, _ray: &Ray, _hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         /*
         if let Some(refraction_index) = self.refraction {
             let (refr_normal, n_in, n_out, cosine);
@@ -244,7 +244,7 @@ impl Material for Dielectric {
         */
         None
     }
-    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+    fn scattering_pdf(&self, _ray: &Ray, _hit: &HitResult, _scattered_ray: &Ray) -> f32 {
         0.0
     }
 }
@@ -263,7 +263,7 @@ impl Emissive {
 }
 
 impl Material for Emissive {
-    fn scattered(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, _ray: &Ray, _hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         None
     }
     fn scattering_pdf(&self, _r: &Ray, _h: &HitResult, _s: &Ray) -> f32 {

@@ -10,7 +10,7 @@ pub struct HitResult {
     pub ray_param: f32,
     pub hit_position: Vec3,
     pub normal: Vec3,
-    pub material: Option<Arc<Material>>,
+    pub material: Option<Arc<dyn Material>>,
     pub uv_coords: Option<(f32, f32)>,
 }
 

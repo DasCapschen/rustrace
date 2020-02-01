@@ -25,7 +25,6 @@ mod hittables {
     pub mod primitives;
 }
 
-
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
 const SAMPLES: u32 = 16;

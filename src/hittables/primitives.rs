@@ -60,7 +60,7 @@ pub struct Sphere {
     /// the radius of the sphere
     pub radius: f32,
     /// the material (color, etc) of the sphere
-    pub material: Arc<Material>,
+    pub material: Arc<dyn Material>,
 }
 
 impl Hit for Sphere {
@@ -146,7 +146,7 @@ pub struct Triangle {
     /// the second spanning vector
     pub span_b: Vec3,
     /// the material (color, etc) of the plane
-    pub material: Arc<Material>,
+    pub material: Arc<dyn Material>,
 }
 
 impl Hit for Triangle {

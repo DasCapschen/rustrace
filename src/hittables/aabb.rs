@@ -97,9 +97,9 @@ impl Hit for AABB {
         }
 
         Some(HitResult {
-            ray_param: t_min,                                 //front hit
-            hit_position: ray.point_at(t_max),                //back hit
-            normal: Vec3::new(0.0, 0.0, 0.0),                 //is this okay?
+            ray_param: t_min,                  //front hit
+            hit_position: ray.point_at(t_max), //back hit
+            normal: Vec3::new(0.0, 0.0, 0.0),  //is this okay?
             material: None,
             uv_coords: None,
         })
