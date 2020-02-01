@@ -158,7 +158,9 @@ impl Hit for Triangle {
         // t * direction · normal = - (origin - llc) · normal
         // t = -((origin - llc) · normal)/(direction · normal)
 
-        //NORMALISE THE NORMAL!!
+        //normalisation may not be necessary right *here*
+        //but the normal will be used for scattering at some point,
+        //and that will break with len != 1
         let normal = self.span_a.cross(self.span_b).normalised();
         let parameter = -(ray.origin - self.llc).dot(normal) / ray.direction.dot(normal);
 

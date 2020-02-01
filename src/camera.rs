@@ -51,7 +51,7 @@ impl Camera {
 
     /// returns the forward vector (direction the camera is looking)
     pub fn forward(&self) -> Vec3 {
-        self.direction.normalised()
+        self.direction
     }
 
     /// returns the vector pointing to the right of the cameras look-direction
@@ -62,12 +62,12 @@ impl Camera {
             z: 0.0,
         };
 
-        GLOBAL_UP.cross(self.forward()).normalised()
+        GLOBAL_UP.cross(self.forward())
     }
 
     /// returns the vector pointing upwards of the cameras look-direction
     pub fn up(&self) -> Vec3 {
-        self.forward().cross(self.right()).normalised()
+        self.forward().cross(self.right())
     }
 
     /// gets a new ray from the camera at the screen coordinates x and y
