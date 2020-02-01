@@ -25,11 +25,11 @@ TODO: refactor the "scatter" method, break it into subfunctions and implement it
 
     incidence = Einfallswinkel
 
-    p / x = position wo Lichtstrahl eintrifft
+    p bzw. x = Position wo Lichtstrahl eintrifft
     n = normalen vektor an p
 
-    w_i = eingehender Lichtstrahl (umgekehrt, zeigt zu licht)
-    w_o = ausgehender Lichtstrahl (zeigt zu auge)
+    w_i = eingehender Lichtstrahl (umgekehrt, zeigt zu Licht)
+    w_o = ausgehender Lichtstrahl (zeigt zu Auge)
 
     L_o = gesamte *ausgehende* spektrale Strahldichte
     L_i = *eingehende* Strahldichte
@@ -55,55 +55,54 @@ TODO: refactor the "scatter" method, break it into subfunctions and implement it
 
 */
 
-#[derive(Clone)]
-pub struct Material {
-    pub albedo: Arc<dyn Texture>,
-    normalmap: Option<Arc<dyn Texture>>,
-    metallic: Metallic,
-    refraction: Option<f32>,
-}
-
-#[derive(Clone)]
-pub enum Metallic {
-    Metal(MetalParameters),
-    NonMetal,
-}
-
-#[derive(Clone)]
-pub struct MetalParameters {
-    pub metallic: Arc<dyn Texture>,
-    pub roughness: Arc<dyn Texture>,
-}
-
-impl Material {
-    /// Constructs a new Material with the given options
-    /// # Arguments
-    /// * `albedo` - texture for the "color" of the object
-    /// * `normalmap` - normalmap texture, or None if no normal is wished
-    /// * `metallic` - whether the material represents a metal, or a nonmetal
-    /// * `refraction` - the refractive index of the material, or None if not refracting
-    pub fn new(
-        albedo: Arc<dyn Texture>,
-        normalmap: Option<Arc<dyn Texture>>,
-        metallic: Metallic,
-        refraction: Option<f32>,
-    ) -> Self {
-        Material {
-            albedo,
-            normalmap,
-            metallic,
-            refraction,
-        }
-    }
-
-    pub fn emitted(&self) -> Vec3 {
+pub trait Material: Send + Sync {
+    fn emitted(&self, hit: &HitResult) -> Vec3 {
         Vec3::new(0.0, 0.0, 0.0)
     }
+    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)>;
+    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32;
+}
 
-    // s(direction) -> directional distribution when light scatters
-    pub fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+fn map_normal(normalmap: Option<&Arc<dyn Texture>>, normal: Vec3, uv_coords: (f32, f32)) -> Vec3 {
+    //calculate new normal from actual normal and normalmap
+    if let Some(normalmap) = normalmap {
+        // get image normal
+        let img_normal = normalmap.texture(uv_coords);
+
+        // scale to [-1,1]
+        let img_normal = (2.0 * img_normal) - Vec3::new(1.0, 1.0, 1.0);
+
+        // transform from tangent to world space
+        ONB::from_w(normal).to_local(img_normal)
+    } else {
+        normal
+    }
+}
+
+fn fresnel_schlick(refraction: f32, cosine: f32) -> f32 {
+    let mut r0 = (1.0 - refraction) / (1.0 + refraction);
+    r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+}
+
+/* ========================== */
+
+#[derive(Clone)]
+pub struct Lambertian {
+    albedo: Arc<dyn Texture>,
+    normalmap: Option<Arc<dyn Texture>>,
+}
+
+impl Lambertian {
+    pub fn new(albedo: Arc<dyn Texture>, normalmap: Option<Arc<dyn Texture>>) -> Self {
+        Self { albedo, normalmap }
+    }
+}
+
+impl Material for Lambertian {
+    fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
         let uv_coords = hit.uv_coords.unwrap();
-        let normal = self.map_normal(hit.normal, uv_coords);
+        let normal = map_normal(self.normalmap.as_ref(), hit.normal, uv_coords);
 
         // lambertian scattering pdf is cos(theta)/pi
 
@@ -115,13 +114,10 @@ impl Material {
         }
     }
 
-    /// Returns Option<Tuple (Attenuation, Normal, Scattered Ray, PDF)>
-    /// the pdf here is p(direction) ; the pdf of how we generate the random direction of the scattered ray
-    /// this is the pdf we use to approximate the integral, while the scattering_pdf is like the BRDF
-    pub fn scatter(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         let uv_coords = hit.uv_coords.unwrap();
 
-        let normal = self.map_normal(hit.normal, uv_coords);
+        let normal = map_normal(self.normalmap.as_ref(), hit.normal, uv_coords);
 
         //lambert
         //randomly choose a vector in hemisphere above hit with pdf cos(theta)/pi
@@ -132,7 +128,44 @@ impl Material {
         //we generated the direction randomly with cos(t)/pi, so return that as our used pdf
         let pdf = normal.dot(direction) / std::f32::consts::PI;
 
-        //metallic path
+        let epsilon = normal * 0.001;
+        let scattered = Ray::new(hit.hit_position + epsilon, direction);
+
+        Some((albedo, normal, scattered, pdf))
+    }
+}
+
+/* ========================== */
+
+#[derive(Clone)]
+pub struct Metal {
+    albedo: Arc<dyn Texture>,
+    normalmap: Option<Arc<dyn Texture>>,
+    metallic: Arc<dyn Texture>,
+    roughness: Arc<dyn Texture>,
+}
+
+impl Metal {
+    pub fn new(
+        albedo: Arc<dyn Texture>,
+        normalmap: Option<Arc<dyn Texture>>,
+        metallic: Arc<dyn Texture>,
+        roughness: Arc<dyn Texture>,
+    ) -> Self {
+        Self {
+            albedo,
+            normalmap,
+            metallic,
+            roughness,
+        }
+    }
+}
+
+impl Material for Metal {
+    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+        0.0
+    }
+    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         /*
         if let Metal(metal_params) = &self.metallic {
             //.x => red channel ; this texture should be grayscale !
@@ -152,8 +185,37 @@ impl Material {
             let metallic = metal_params.metallic.texture(uv_coords).x;
             direction = Vec3::lerp(direction, reflected, metallic);
         }
+        */
+        None
+    }
+}
 
-        //refraction path
+/* ========================== */
+
+#[derive(Clone)]
+pub struct Dielectric {
+    albedo: Arc<dyn Texture>,
+    normalmap: Option<Arc<dyn Texture>>,
+    refractive_index: f32,
+}
+
+impl Dielectric {
+    pub fn new(
+        albedo: Arc<dyn Texture>,
+        normalmap: Option<Arc<dyn Texture>>,
+        refractive_index: f32,
+    ) -> Self {
+        Self {
+            albedo,
+            normalmap,
+            refractive_index,
+        }
+    }
+}
+
+impl Material for Dielectric {
+    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+        /*
         if let Some(refraction_index) = self.refraction {
             let (refr_normal, n_in, n_out, cosine);
             if ray.direction.dot(normal) > 0.0 {
@@ -178,38 +240,36 @@ impl Material {
                     direction = d;
                 }
             }
-        }*/
-
-        //else, scatter it
-        let epsilon = normal * 0.001;
-        let scattered = Ray::new(hit.hit_position + epsilon, direction);
-
-        //return final
-        Some((albedo, normal, scattered, pdf))
-    }
-
-    fn map_normal(&self, normal: Vec3, uv_coords: (f32, f32)) -> Vec3 {
-        //calculate new normal from actual normal and normalmap
-        if let Some(normalmap) = &self.normalmap {
-            // get image normal
-            let img_normal = normalmap.texture(uv_coords);
-
-            // scale to [-1,1]
-            let img_normal = (2.0 * img_normal) - Vec3::new(1.0, 1.0, 1.0);
-
-            // transform from tangent to world space
-            ONB::from_w(normal).to_local(img_normal)
-        } else {
-            normal
         }
+        */
+        None
     }
+    fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+        0.0
+    }
+}
 
-    fn fresnel_schlick(&self, cosine: f32) -> f32 {
-        //safe, we don't call this function if we have no refraction
-        let refraction = self.refraction.unwrap();
+/* ========================== */
 
-        let mut r0 = (1.0 - refraction) / (1.0 + refraction);
-        r0 = r0 * r0;
-        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
+#[derive(Clone)]
+pub struct Emissive {
+    emitted: Arc<dyn Texture>,
+}
+
+impl Emissive {
+    pub fn new(emitted: Arc<dyn Texture>) -> Self {
+        Self { emitted }
+    }
+}
+
+impl Material for Emissive {
+    fn scattered(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+        None
+    }
+    fn scattering_pdf(&self, _r: &Ray, _h: &HitResult, _s: &Ray) -> f32 {
+        0.0
+    }
+    fn emitted(&self, hit: &HitResult) -> Vec3 {
+        self.emitted.texture(hit.uv_coords.unwrap())
     }
 }

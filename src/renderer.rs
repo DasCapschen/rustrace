@@ -1,5 +1,5 @@
 use crate::camera::Camera;
-use crate::gfx::material::{Material, Metallic};
+use crate::gfx::material::*;
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
 use crate::hittables::mesh::Mesh;
 use crate::math::vec3::Vec3;
@@ -221,7 +221,7 @@ impl Renderer {
         };*/
 
         let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-        let _material = Arc::new(Material::new(texture, None, Metallic::NonMetal, None));
+        let _material = Arc::new(Lambertian::new(texture, None));
 
         /*renderer.add_object(Arc::new(Sphere {
             center: Vec3::new(0.0, 0.0, 0.0),

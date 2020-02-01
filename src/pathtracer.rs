@@ -171,10 +171,10 @@ impl PathTracer {
                 .expect("How did you manage to not have a material?!");
 
             //emitted is even added if we do not scatter!
-            let emitted = mat.emitted();
+            let emitted = mat.emitted(&hit);
             out_color += final_attenuation * emitted;
 
-            if let Some((albedo, normal, scattered_ray, pdf)) = mat.scatter(&ray_to_use, &hit) {
+            if let Some((albedo, normal, scattered_ray, pdf)) = mat.scattered(&ray_to_use, &hit) {
                 let brdf = albedo * mat.scattering_pdf(&ray, &hit, &scattered_ray);
                 final_attenuation *= brdf / pdf;
                 ray_to_use = scattered_ray;

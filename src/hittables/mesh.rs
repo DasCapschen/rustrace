@@ -1,5 +1,4 @@
-use crate::gfx::material::Material;
-use crate::gfx::material::Metallic;
+use crate::gfx::material::*;
 use crate::gfx::texture::ConstantTexture;
 use std::path::Path;
 use std::sync::Arc;
@@ -22,10 +21,8 @@ impl Mesh {
         let (models, _mats) = tobj::load_obj(file.as_ref()).expect("couldn't load file");
 
         //load material
-        let material = Arc::new(Material::new(
+        let material = Arc::new(Lambertian::new(
             Arc::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
-            None,
-            Metallic::NonMetal,
             None,
         ));
 
