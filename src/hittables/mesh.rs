@@ -194,8 +194,7 @@ impl Hit for Triangle {
             //linear interpolate normal
             let normal = match (self.a.normal, self.b.normal, self.c.normal) {
                 (Some(an), Some(bn), Some(cn)) => {
-                    let temp = Vec3::lerp( an, bn, alpha );
-                    Vec3::lerp( temp, cn, beta )
+                    (1.0 - alpha - beta) * an + alpha * bn + beta * cn
                 },
                 _ => tri_normal,
             };
@@ -204,12 +203,10 @@ impl Hit for Triangle {
             let uvcoords = match (self.a.uv_coords, self.b.uv_coords, self.c.uv_coords) {
                 (Some(auv), Some(buv), Some(cuv)) => {
                     //linear interpolate u coordinate
-                    let temp = (1.0 - alpha) * auv.0 + alpha * buv.0;
-                    let u_coord = (1.0 - alpha) * temp + alpha * cuv.0;
+                    let u_coord = (1.0 - alpha - beta) * auv.0 + alpha * buv.0 + beta * cuv.0;
 
                     //linear interpolate v coordinate
-                    let temp = (1.0 - beta) * auv.1 + beta * buv.1;
-                    let v_coord = (1.0 - beta) * temp + beta * cuv.1;
+                    let v_coord = (1.0 - alpha - beta) * auv.1 + alpha * buv.1 + beta * cuv.1;
 
                     (u_coord, v_coord)
                 },
