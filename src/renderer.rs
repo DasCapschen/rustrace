@@ -4,6 +4,9 @@ use crate::gfx::texture::{ConstantTexture, ImageTexture};
 use crate::hittables::mesh::Mesh;
 use crate::math::vec3::Vec3;
 use crate::pathtracer::PathTracer;
+use crate::hittables::volume::ConstantVolume;
+use crate::hittables::volume::Isotropic;
+use crate::hittables::primitives::*;
 use scoped_threadpool::Pool;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -40,7 +43,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(width: u32, height: u32, samples: u32) -> Self {
+    pub fn new(width: u32, height: u32, samples: u32, incremental: bool) -> Self {
         //initialise SDL2
         let context = sdl2::init().unwrap();
         let video_subsystem = context.video().unwrap();
@@ -56,7 +59,7 @@ impl Renderer {
             .unwrap();
 
         //setup the camera here
-        let pos = Vec3::new(-1.0, 0.5, 0.0);
+        let pos = Vec3::new(1.0, 0.5, 0.0);
         let target = Vec3::new(0.0, 0.0, 0.0);
         let camera = Camera::new(
             /*pos: */ pos,
@@ -73,7 +76,7 @@ impl Renderer {
         let skybox = Arc::new(ImageTexture::new("res/textures/paul_lobe_haus_4k.hdr"));
 
         //create the renderer
-        let path_tracer = PathTracer::new(width, height, samples, camera, skybox);
+        let path_tracer = PathTracer::new(width, height, samples, incremental, camera, skybox);
 
         let buffer_size = (width * height * 3) as usize;
         Renderer {
@@ -82,7 +85,7 @@ impl Renderer {
             context,
             window,
             path_tracer,
-            display_mode: DisplayMode::Denoised,
+            display_mode: DisplayMode::Color,
             running: false,
             color_buffer: vec![0f32; buffer_size],
             albedo_buffer: vec![0f32; buffer_size],
@@ -221,16 +224,22 @@ impl Renderer {
         };*/
 
         let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
-        let _material = Arc::new(Lambertian::new(texture, None));
+        let material = Arc::new(Lambertian::new(texture, None));
 
-        /*renderer.add_object(Arc::new(Sphere {
+        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
+
+        //let dragon = Arc::new(Mesh::new("res/models/dragon_tiny.obj"));
+        /*let boundary = Arc::new(Sphere {
             center: Vec3::new(0.0, 0.0, 0.0),
             radius: 0.5,
             material: material
-        }));*/
+        });
 
-        self.path_tracer
-            .add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
+        let volume_albedo = Arc::new(ConstantTexture::new(Vec3::rgb(255, 50, 50)));
+        let volume_material = Arc::new(Isotropic::new(volume_albedo));
+        let volume = ConstantVolume::new(boundary, 2.0, volume_material);
+
+        self.path_tracer.add_object(Arc::new(volume));*/
 
         // DO NOT CHANGE STUFF AFTER THIS COMMENT
 
@@ -274,6 +283,8 @@ impl Renderer {
         //create thread pool (cannot save this either, annoying...)
         let mut thread_pool = Pool::new(8);
 
+        let mut frame = 1;
+
         let mut event_pump = self.context.event_pump().unwrap();
         while self.running {
             self.handle_sdl_events(&mut event_pump);
@@ -313,6 +324,7 @@ impl Renderer {
                             normal_slice,
                             depth_slice,
                             i * len,
+                            frame
                         );
                     });
                 }
@@ -355,6 +367,9 @@ impl Renderer {
 
             //"swap" images
             surface.update_window().expect("failed to update windows!");
+
+            //update frame value
+            frame += 1;
         }
     }
 }

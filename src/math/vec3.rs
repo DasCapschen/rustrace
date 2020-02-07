@@ -37,11 +37,11 @@ impl Vec3 {
 
     /// normalise the vector (length = 1)
     pub fn normalised(&self) -> Vec3 {
-        let len = self.len();
+        let ilen = 1.0 / self.len();
         Vec3 {
-            x: self.x / len,
-            y: self.y / len,
-            z: self.z / len,
+            x: self.x * ilen,
+            y: self.y * ilen,
+            z: self.z * ilen,
         }
     }
 

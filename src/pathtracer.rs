@@ -13,6 +13,7 @@ pub struct PathTracer {
     width: u32,
     height: u32,
     samples: u32,
+    incremental: bool,
     pub camera: Camera,
     objects: Vec<Arc<dyn Hit>>,
     sky: Arc<dyn Texture>,
@@ -24,14 +25,20 @@ impl PathTracer {
     pub fn new(
         width: u32,
         height: u32,
-        samples: u32,
+        mut samples: u32,
+        incremental: bool,
         camera: Camera,
         sky: Arc<dyn Texture>,
     ) -> Self {
+        if incremental {
+            samples = 1;
+        }
+
         PathTracer {
             width,
             height,
             samples,
+            incremental,
             camera,
             objects: Vec::new(),
             sky,
@@ -71,6 +78,19 @@ impl PathTracer {
         buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
     }
 
+    fn get_pixel(&self, buf: &[f32], x: u32, y: u32) -> Vec3 {
+        let x_stride = 3;
+        let y_stride = self.width * x_stride;
+
+        let position = ((x * x_stride) + (y * y_stride)) as usize;
+
+        Vec3::new(
+            buf[ 0 + position ],
+            buf[ 1 + position ],
+            buf[ 2 + position ]
+        )
+    }
+
     pub fn draw_image(
         &self,
         color_buf: &mut [f32],
@@ -78,6 +98,7 @@ impl PathTracer {
         normal_buf: &mut [f32],
         depth_buf: &mut [f32],
         offset: usize,
+        frame: u32,
     ) {
         // /width because line width, /3 because RGB
         let y_max = color_buf.len() / self.width as usize / 3;
@@ -112,8 +133,6 @@ impl PathTracer {
                     };
 
                     final_color += color;
-
-                    //I am not sure if these should be sampled multiple times...
                     final_albedo += albedo;
                     final_normal += normal; //[-1,1]
                     final_depth += depth;
@@ -124,6 +143,16 @@ impl PathTracer {
                 final_albedo /= self.samples as f32;
                 final_normal /= self.samples as f32;
                 final_depth /= self.samples as f32;
+
+                if self.incremental {
+                    let k = 1.0 / frame as f32;
+                    let km1 = (frame-1) as f32 / frame as f32;
+
+                    final_color = (self.get_pixel(color_buf, x, y) * km1) + (final_color * k);
+                    final_albedo = (self.get_pixel(albedo_buf, x, y) * km1) + (final_albedo * k);
+                    final_normal = (self.get_pixel(normal_buf, x, y) * km1) + (final_normal * k);
+                    final_depth = (self.get_pixel(depth_buf, x, y).x * km1) + (final_depth * k);
+                }
 
                 self.set_pixel(color_buf, x, y, final_color);
                 self.set_pixel(albedo_buf, x, y, final_albedo);

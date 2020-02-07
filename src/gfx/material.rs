@@ -56,10 +56,14 @@ TODO: refactor the "scatter" method, break it into subfunctions and implement it
 */
 
 pub trait Material: Send + Sync {
+    /// returns color of emitted light
     fn emitted(&self, _hit: &HitResult) -> Vec3 {
         Vec3::new(0.0, 0.0, 0.0)
     }
+    /// returns tuple of (albedo, normal, scattered ray, pdf)
     fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)>;
+
+    /// returns the value of the pdf used for scattering at that position
     fn scattering_pdf(&self, _ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32;
 }
 
