@@ -127,23 +127,6 @@ impl Hit for Sphere {
     }
 }
 
-#[derive(Clone)]
-pub struct Vertex {
-    position: Vec3,
-    normal: Vec3,
-    uv_coords: (f32, f32),
-}
-
-impl Vertex {
-    pub fn new(position: Vec3, normal: Vec3, uv_coords: (f32, f32)) -> Self {
-        Self {
-            position,
-            normal,
-            uv_coords
-        }
-    }
-}
-
 /// represents a flat plane in 3d space
 /// infinite planes no longer work after introduction of BVH
 #[derive(Clone)]
@@ -164,13 +147,6 @@ pub struct Triangle {
     pub span_b: Vec3,
     /// the material (color, etc) of the plane
     pub material: Arc<dyn Material>,
-}
-
-impl Triangle {
-    //use these once we switched triangle to use Vertex
-    //new()
-    //lerp_normal()
-    //lerp_uv()
 }
 
 impl Hit for Triangle {
@@ -210,8 +186,8 @@ impl Hit for Triangle {
 
         let denom = 1.0 / ((adb * adb) - (ada * bdb));
 
-        let u = ((adb * rdb) - (bdb * rda)) * denom;
-        let v = ((adb * rda) - (ada * rdb)) * denom;
+        let u = ((adb * rdb) - (bdb * rda)) * denom; //along spanA
+        let v = ((adb * rda) - (ada * rdb)) * denom; //along spanB
 
         // u, v must be positive, smaller 1, and if a triangle, their sum must by < 1 too
         if u < 0.0 || v < 0.0 || (u + v) > 1.0 {
