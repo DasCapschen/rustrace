@@ -14,6 +14,7 @@ mod math {
     pub mod mat3;
     pub mod onb;
     pub mod pdf;
+    pub mod transform;
     pub mod vec3;
     pub mod quat;
 }

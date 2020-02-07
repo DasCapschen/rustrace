@@ -6,9 +6,9 @@ use crate::ray::Ray;
 #[derive(Debug, Copy, Clone)]
 pub struct AABB {
     /// the "starting" point (lower left front corner) ; must be < end!
-    start: Vec3,
+    pub start: Vec3,
     /// the "ending" point (upper right back corner) ; must be > start!
-    end: Vec3,
+    pub end: Vec3,
 }
 
 #[derive(Debug, Copy, Clone)]

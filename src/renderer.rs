@@ -14,6 +14,8 @@ use sdl2::video::Window;
 use sdl2::{EventPump, Sdl};
 use std::sync::Arc;
 use std::time::Instant;
+use crate::math::quat::Quaternion;
+use crate::math::transform::Transform;
 
 enum DisplayMode {
     Denoised,
@@ -85,7 +87,7 @@ impl Renderer {
             context,
             window,
             path_tracer,
-            display_mode: DisplayMode::Color,
+            display_mode: DisplayMode::Denoised,
             running: false,
             color_buffer: vec![0f32; buffer_size],
             albedo_buffer: vec![0f32; buffer_size],
@@ -226,7 +228,14 @@ impl Renderer {
         let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
         let material = Arc::new(Lambertian::new(texture, None));
 
-        self.path_tracer.add_object(Arc::new(Mesh::new("res/models/dragon_tiny.obj")));
+        let dragon = Arc::new(Mesh::new("res/models/dragon_tiny.obj"));
+        let position = Vec3::new(0.0, 0.5, 0.0);
+        let rotation = Quaternion::new(0.0, 0.0, 0.0, 1.0);
+        let scale = 1.0;
+
+        let transformed_dragon = Arc::new( Transform::new(dragon, position, rotation, scale) );
+
+        self.path_tracer.add_object(transformed_dragon);
 
         //let dragon = Arc::new(Mesh::new("res/models/dragon_tiny.obj"));
         /*let boundary = Arc::new(Sphere {
