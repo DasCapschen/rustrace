@@ -16,6 +16,28 @@ impl Quaternion {
         Self { x, y, z, w }
     }
 
+    //we first yaw (Y), then pitch (X), then roll (Z)
+    pub fn from_euler(yaw: f32, pitch: f32, roll: f32) -> Self {
+        //cos and sin expect radians
+        let yaw = (yaw/2.0).to_radians();
+        let pitch = (pitch/2.0).to_radians();
+        let roll = (roll/2.0).to_radians();
+
+        let cos_yaw   = yaw.cos();
+        let cos_pitch = pitch.cos();
+        let cos_roll  = roll.cos();
+        let sin_yaw   = yaw.sin();
+        let sin_pitch = pitch.sin();
+        let sin_roll  = roll.sin();
+
+        Self {
+            x: sin_yaw * cos_pitch * sin_roll + cos_yaw * sin_pitch * cos_roll,
+            y: sin_yaw * cos_pitch * cos_roll - cos_yaw * sin_pitch * sin_roll,
+            z: cos_yaw * cos_pitch * sin_roll - sin_yaw * sin_pitch * cos_roll,
+            w: cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll,
+        }
+    }
+
     pub fn len(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
@@ -47,9 +69,16 @@ impl Quaternion {
         self.conjugate() / self.len_squared()
     }
 
+    //sometimes you read qpq^-1, sometimes qpq*, so which is right?
+    //i think inverse, and qpq* is special case if |q| == 1
+    //because q^-1 == q* if |q| == 1
     pub fn rotate_vector(&self, v: Vec3) -> Vec3 {
         let q = (*self) * v * self.inverse();
         Vec3::new(q.x, q.y, q.z) //ignore w
+    }
+    pub fn unrotate_vector(&self, v: Vec3) -> Vec3 {
+        let q = self.inverse() * v * (*self);
+        Vec3::new(q.x, q.y, q.z)
     }
 }
 

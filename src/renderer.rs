@@ -61,7 +61,7 @@ impl Renderer {
             .unwrap();
 
         //setup the camera here
-        let pos = Vec3::new(1.0, 0.5, 0.0);
+        let pos = Vec3::new(1.0, 0.0, 0.0);
         let target = Vec3::new(0.0, 0.0, 0.0);
         let camera = Camera::new(
             /*pos: */ pos,
@@ -229,8 +229,8 @@ impl Renderer {
         let material = Arc::new(Lambertian::new(texture, None));
 
         let dragon = Arc::new(Mesh::new("res/models/dragon_tiny.obj"));
-        let position = Vec3::new(0.0, 0.5, 0.0);
-        let rotation = Quaternion::new(0.0, 0.0, 0.0, 1.0);
+        let position = Vec3::new(0.0, 0.0, 0.5);
+        let rotation = Quaternion::from_euler(-90.0, -0.0, 45.0);
         let scale = 1.0;
 
         let transformed_dragon = Arc::new( Transform::new(dragon, position, rotation, scale) );
