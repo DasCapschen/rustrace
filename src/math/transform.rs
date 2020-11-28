@@ -114,7 +114,7 @@ impl Transform {
     }
 
     //TODO: does not apply scale!
-    fn apply_transform(&self, ray: &Ray, hit: &HitResult) -> HitResult {
+    fn apply_transform(&self, _ray: &Ray, hit: &HitResult) -> HitResult {
         HitResult {
             ray_param: hit.ray_param,
             hit_position: self.rotation.rotate_vector(hit.hit_position) + self.position,

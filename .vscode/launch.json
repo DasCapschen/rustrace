@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Run 'raytrace' optimised",
             "env": {
-                "OIDN_DIR": "/usr",
+                "OIDN_DIR": "/usr"
             },
             "cargo": {
                 "args": [

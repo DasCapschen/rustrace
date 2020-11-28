@@ -24,7 +24,7 @@ impl ConstantVolume {
 }
 
 impl Hit for ConstantVolume {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitResult> {
+    fn hit(&self, ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitResult> {
         let t_min = std::f32::MIN;
         let t_max = std::f32::MAX;
 
@@ -77,7 +77,7 @@ impl Isotropic {
 }
 
 impl Material for Isotropic {
-    fn scattered(&self, ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
+    fn scattered(&self, _ray: &Ray, hit: &HitResult) -> Option<(Vec3, Vec3, Ray, f32)> {
         let albedo = self.albedo.texture((0.0, 0.0));
         let normal = hit.normal;
         let scattered_ray = Ray::new(hit.hit_position, Vec3::random_in_unit_sphere());
@@ -87,7 +87,7 @@ impl Material for Isotropic {
 
         Some((albedo, normal, scattered_ray, pdf))
     }
-    fn scattering_pdf(&self, ray: &Ray, hit: &HitResult, scattered_ray: &Ray) -> f32 {
+    fn scattering_pdf(&self, _ray: &Ray, _hit: &HitResult, _scattered_ray: &Ray) -> f32 {
         //1 over 4 pi, because chance to scatter was same in every direction
         1.0 / (4.0 * std::f32::consts::PI)
     }

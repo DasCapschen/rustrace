@@ -1,5 +1,5 @@
 use crate::gfx::texture::Texture;
-use rand::{Rng, prelude::ThreadRng};
+use rand::{prelude::ThreadRng, Rng};
 use std::sync::Arc;
 
 use crate::camera::Camera;
@@ -87,21 +87,21 @@ impl PathTracer {
         Vec3::new(buf[0 + position], buf[1 + position], buf[2 + position])
     }
 
-    pub fn render_pixel(&self,
+    pub fn render_pixel(
+        &self,
         rng: &mut ThreadRng,
-        index: usize, frame: u32,
+        index: usize,
+        frame: u32,
         color_buf: &mut [f32],
         albedo_buf: &mut [f32],
         normal_buf: &mut [f32],
-        depth_buf: &mut [f32]
+        depth_buf: &mut [f32],
     ) {
         let pixel = index as u32; //divided by 3 because RGB
         let x = pixel % self.width;
         let y = pixel / self.width; //is floored
 
         //draw image
-        let mut rng = rand::thread_rng();
-
         let bvh = self.bvh.as_ref().expect("did not call finalise()!");
 
         let mut final_color = Vec3::rgb(0, 0, 0);
@@ -134,10 +134,14 @@ impl PathTracer {
             let k = 1.0 / frame as f32;
             let km1 = (frame - 1) as f32 / frame as f32;
 
-            final_color = (Vec3::new(color_buf[0], color_buf[1], color_buf[2]) * km1) + (final_color * k);
-            final_albedo = (Vec3::new(albedo_buf[0], albedo_buf[1], albedo_buf[2]) * km1) + (final_albedo * k);
-            final_normal = (Vec3::new(normal_buf[0], normal_buf[1], normal_buf[2]) * km1) + (final_normal * k);
-            final_depth = (Vec3::new(depth_buf[0], depth_buf[1], depth_buf[2]).x * km1) + (final_depth * k);
+            final_color =
+                (Vec3::new(color_buf[0], color_buf[1], color_buf[2]) * km1) + (final_color * k);
+            final_albedo =
+                (Vec3::new(albedo_buf[0], albedo_buf[1], albedo_buf[2]) * km1) + (final_albedo * k);
+            final_normal =
+                (Vec3::new(normal_buf[0], normal_buf[1], normal_buf[2]) * km1) + (final_normal * k);
+            final_depth =
+                (Vec3::new(depth_buf[0], depth_buf[1], depth_buf[2]).x * km1) + (final_depth * k);
         }
 
         color_buf[0] = final_color.x;

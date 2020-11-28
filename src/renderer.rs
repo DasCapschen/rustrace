@@ -1,12 +1,9 @@
 use crate::camera::Camera;
 use crate::gfx::material::*;
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
-use crate::hittables::mesh::Mesh;
+
 use crate::hittables::primitives::*;
-use crate::hittables::volume::ConstantVolume;
-use crate::hittables::volume::Isotropic;
-use crate::math::quat::Quaternion;
-use crate::math::transform::Transform;
+
 use crate::math::vec3::Vec3;
 use crate::pathtracer::PathTracer;
 use rayon::prelude::*;
@@ -76,7 +73,7 @@ impl Renderer {
             /*h: */ height,
             /*focus: */ f, //if aperture == 0 focus dist is irrelevant
             /*aperture: */
-            f/n, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+            f / n, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
         );
 
         // https://hdrihaven.com/
@@ -186,14 +183,15 @@ impl Renderer {
     /// creates the scene that will be rendered
     pub fn build_scene(mut self) -> Self {
         //create a 10x10x10 cube of spheres with colorful colors
-        
-        self.path_tracer.add_object(Arc::new(
-            Sphere {
-                center: Vec3::new(0.0, -1000.0, 0.0),
-                radius: 1000.0,
-                material: Arc::new( Lambertian::new(Arc::new(ConstantTexture::new(Vec3::rgb(5, 50, 10))), None) )
-            }
-        ));
+
+        self.path_tracer.add_object(Arc::new(Sphere {
+            center: Vec3::new(0.0, -1000.0, 0.0),
+            radius: 1000.0,
+            material: Arc::new(Lambertian::new(
+                Arc::new(ConstantTexture::new(Vec3::rgb(5, 50, 10))),
+                None,
+            )),
+        }));
 
         for x in 0..10i8 {
             for y in 0..10i8 {
@@ -214,7 +212,6 @@ impl Renderer {
                 }
             }
         }
-        
 
         /*
         let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -308,7 +305,6 @@ impl Renderer {
             .set_srgb(false)
             .set_img_dims(self.width as usize, self.height as usize);
 
-
         let mut frame = 1;
 
         let mut event_pump = self.context.event_pump().unwrap();
@@ -318,31 +314,28 @@ impl Renderer {
             //#[cfg(measure_perf)]
             let render_time = Instant::now();
 
-            let len = self.color_buffer.len();
+            let _len = self.color_buffer.len();
             let cb = &mut self.color_buffer;
             let ab = &mut self.albedo_buffer;
             let nb = &mut self.normal_buffer;
             let db = &mut self.depth_buffer;
             let tracer = &self.path_tracer;
 
-            cb.par_chunks_mut(3).enumerate()
-            .zip( ab.par_chunks_mut(3))
-            .zip( nb.par_chunks_mut(3))
-            .zip( db.par_chunks_mut(3))
-            .for_each_init(
-                || rand::thread_rng(),
-                |rng, ((((index, c), a), n), d)| {
-                    tracer.render_pixel(rng, index, frame, 
-                    c, 
-                    a, 
-                    n, 
-                    d)
-            });
+            cb.par_chunks_mut(3)
+                .enumerate()
+                .zip(ab.par_chunks_mut(3))
+                .zip(nb.par_chunks_mut(3))
+                .zip(db.par_chunks_mut(3))
+                .for_each_init(
+                    || rand::thread_rng(),
+                    |rng, ((((index, c), a), n), d)| {
+                        tracer.render_pixel(rng, index, frame, c, a, n, d)
+                    },
+                );
 
             //#[cfg(measure_perf)]
             println!("Render took {:?}", render_time.elapsed());
 
-            
             #[cfg(measure_perf)]
             let denoise_time = Instant::now();
 
@@ -386,7 +379,7 @@ impl Renderer {
             {
                 println!("Total draw time was: {:?}", render_time.elapsed());
                 println!("=========================");
-            }            
+            }
 
             //"swap" images
             surface.update_window().expect("failed to update windows!");
