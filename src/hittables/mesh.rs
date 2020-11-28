@@ -17,11 +17,14 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new<P: AsRef<Path>>(file: P) -> Self {
-        let (models, _mats) = tobj::load_obj(file.as_ref()).expect("couldn't load file");
+        let (models, _mats) = tobj::load_obj(file.as_ref(), true).expect("couldn't load file");
+
+        let r: f32 = (123.0f32 / 255.0f32).powf(2.2f32);
+        let g: f32 = (63.0f32 / 255.0f32).powf(2.2f32);
 
         //load material
         let material = Arc::new(Lambertian::new(
-            Arc::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9))),
+            Arc::new(ConstantTexture::new(Vec3::new(r, g, 0.0))),
             None,
         ));
 
@@ -39,16 +42,22 @@ impl Mesh {
 
                 let n1 = if !models[0].mesh.normals.is_empty() {
                     Some(Vec3 {
-                        x: models[0].mesh.normals[3 * chunk[0] as usize ],
+                        x: models[0].mesh.normals[3 * chunk[0] as usize],
                         y: models[0].mesh.normals[3 * chunk[0] as usize + 1],
                         z: models[0].mesh.normals[3 * chunk[0] as usize + 2],
                     })
-                } else { None };
+                } else {
+                    None
+                };
 
                 let uv1 = if !models[0].mesh.texcoords.is_empty() {
-                    Some(( models[0].mesh.texcoords[2 * chunk[0] as usize],
-                           models[0].mesh.texcoords[2 * chunk[0] as usize +1] ))
-                } else { None };
+                    Some((
+                        models[0].mesh.texcoords[2 * chunk[0] as usize],
+                        models[0].mesh.texcoords[2 * chunk[0] as usize + 1],
+                    ))
+                } else {
+                    None
+                };
 
                 let p2 = Vec3 {
                     x: models[0].mesh.positions[3 * chunk[1] as usize],
@@ -57,16 +66,22 @@ impl Mesh {
                 };
                 let n2 = if !models[0].mesh.normals.is_empty() {
                     Some(Vec3 {
-                        x: models[0].mesh.normals[3 * chunk[1] as usize ],
+                        x: models[0].mesh.normals[3 * chunk[1] as usize],
                         y: models[0].mesh.normals[3 * chunk[1] as usize + 1],
                         z: models[0].mesh.normals[3 * chunk[1] as usize + 2],
                     })
-                } else { None };
+                } else {
+                    None
+                };
 
                 let uv2 = if !models[0].mesh.texcoords.is_empty() {
-                    Some(( models[0].mesh.texcoords[2 * chunk[1] as usize],
-                           models[0].mesh.texcoords[2 * chunk[1] as usize +1] ))
-                } else { None };
+                    Some((
+                        models[0].mesh.texcoords[2 * chunk[1] as usize],
+                        models[0].mesh.texcoords[2 * chunk[1] as usize + 1],
+                    ))
+                } else {
+                    None
+                };
 
                 let p3 = Vec3 {
                     x: models[0].mesh.positions[3 * chunk[2] as usize],
@@ -75,16 +90,22 @@ impl Mesh {
                 };
                 let n3 = if !models[0].mesh.normals.is_empty() {
                     Some(Vec3 {
-                        x: models[0].mesh.normals[3 * chunk[2] as usize ],
+                        x: models[0].mesh.normals[3 * chunk[2] as usize],
                         y: models[0].mesh.normals[3 * chunk[2] as usize + 1],
                         z: models[0].mesh.normals[3 * chunk[2] as usize + 2],
                     })
-                } else { None };
+                } else {
+                    None
+                };
 
                 let uv3 = if !models[0].mesh.texcoords.is_empty() {
-                    Some(( models[0].mesh.texcoords[2 * chunk[2] as usize],
-                           models[0].mesh.texcoords[2 * chunk[2] as usize +1] ))
-                } else { None };
+                    Some((
+                        models[0].mesh.texcoords[2 * chunk[2] as usize],
+                        models[0].mesh.texcoords[2 * chunk[2] as usize + 1],
+                    ))
+                } else {
+                    None
+                };
 
                 Triangle {
                     a: Vertex::new(p1, n1, uv1),
@@ -132,7 +153,6 @@ impl Hit for Mesh {
     }
 }
 
-
 #[derive(Copy, Clone, Debug)]
 struct Vertex {
     pub position: Vec3,
@@ -145,7 +165,7 @@ impl Vertex {
         Self {
             position,
             normal,
-            uv_coords
+            uv_coords,
         }
     }
 }
@@ -164,7 +184,8 @@ impl Hit for Triangle {
         let span_b = self.c.position - self.a.position;
         let tri_normal = span_a.cross(span_b).normalised();
 
-        let parameter = -(ray.origin - self.a.position).dot(tri_normal) / ray.direction.dot(tri_normal);
+        let parameter =
+            -(ray.origin - self.a.position).dot(tri_normal) / ray.direction.dot(tri_normal);
 
         //no hit if outside [min, max]
         if parameter < t_min || parameter > t_max {
@@ -190,12 +211,11 @@ impl Hit for Triangle {
         if alpha < 0.0 || beta < 0.0 || (alpha + beta) > 1.0 {
             None
         } else {
-
             //linear interpolate normal
             let normal = match (self.a.normal, self.b.normal, self.c.normal) {
                 (Some(an), Some(bn), Some(cn)) => {
                     (1.0 - alpha - beta) * an + alpha * bn + beta * cn
-                },
+                }
                 _ => tri_normal,
             };
 
@@ -209,8 +229,8 @@ impl Hit for Triangle {
                     let v_coord = (1.0 - alpha - beta) * auv.1 + alpha * buv.1 + beta * cuv.1;
 
                     (u_coord, v_coord)
-                },
-                _ => (alpha, beta)
+                }
+                _ => (alpha, beta),
             };
 
             Some(HitResult {
@@ -224,17 +244,47 @@ impl Hit for Triangle {
     }
 
     fn bounding_box(&self) -> Option<AABB> {
-        let min_x = self.a.position.x.min(self.b.position.x).min(self.c.position.x);
-        let min_y = self.a.position.y.min(self.b.position.y).min(self.c.position.y);
-        let min_z = self.a.position.z.min(self.b.position.z).min(self.c.position.z);
+        let min_x = self
+            .a
+            .position
+            .x
+            .min(self.b.position.x)
+            .min(self.c.position.x);
+        let min_y = self
+            .a
+            .position
+            .y
+            .min(self.b.position.y)
+            .min(self.c.position.y);
+        let min_z = self
+            .a
+            .position
+            .z
+            .min(self.b.position.z)
+            .min(self.c.position.z);
 
-        let max_x = self.a.position.x.max(self.b.position.x).max(self.c.position.x);
-        let max_y = self.a.position.y.max(self.b.position.y).max(self.c.position.y);
-        let max_z = self.a.position.z.max(self.b.position.z).max(self.c.position.z);
+        let max_x = self
+            .a
+            .position
+            .x
+            .max(self.b.position.x)
+            .max(self.c.position.x);
+        let max_y = self
+            .a
+            .position
+            .y
+            .max(self.b.position.y)
+            .max(self.c.position.y);
+        let max_z = self
+            .a
+            .position
+            .z
+            .max(self.b.position.z)
+            .max(self.c.position.z);
 
         Some(AABB::new(
             Vec3::new(min_x, min_y, min_z),
-            Vec3::new(max_x, max_y, max_z)
+            Vec3::new(max_x, max_y, max_z),
         ))
     }
 

@@ -1,5 +1,5 @@
 use crate::gfx::texture::Texture;
-use rand::Rng;
+use rand::{Rng, prelude::ThreadRng};
 use std::sync::Arc;
 
 use crate::camera::Camera;
@@ -84,87 +84,77 @@ impl PathTracer {
 
         let position = ((x * x_stride) + (y * y_stride)) as usize;
 
-        Vec3::new(
-            buf[ 0 + position ],
-            buf[ 1 + position ],
-            buf[ 2 + position ]
-        )
+        Vec3::new(buf[0 + position], buf[1 + position], buf[2 + position])
     }
 
-    pub fn draw_image(
-        &self,
+    pub fn render_pixel(&self,
+        rng: &mut ThreadRng,
+        index: usize, frame: u32,
         color_buf: &mut [f32],
         albedo_buf: &mut [f32],
         normal_buf: &mut [f32],
-        depth_buf: &mut [f32],
-        offset: usize,
-        frame: u32,
+        depth_buf: &mut [f32]
     ) {
-        // /width because line width, /3 because RGB
-        let y_max = color_buf.len() / self.width as usize / 3;
-
-        let offset = offset / 3; //RGB
-        let y_offset = (offset / self.width as usize) as u32; // /width because line width
-        let x_offset = (offset % (self.width as usize)) as u32;
+        let pixel = index as u32; //divided by 3 because RGB
+        let x = pixel % self.width;
+        let y = pixel / self.width; //is floored
 
         //draw image
         let mut rng = rand::thread_rng();
 
         let bvh = self.bvh.as_ref().expect("did not call finalise()!");
 
-        for x in 0..self.width {
-            for y in 0..y_max as u32 {
-                let mut final_color = Vec3::rgb(0, 0, 0);
-                let mut final_albedo = Vec3::rgb(0, 0, 0);
-                let mut final_normal = Vec3::rgb(0, 0, 0);
-                let mut final_depth = 0.0;
+        let mut final_color = Vec3::rgb(0, 0, 0);
+        let mut final_albedo = Vec3::rgb(0, 0, 0);
+        let mut final_normal = Vec3::rgb(0, 0, 0);
+        let mut final_depth = 0.0;
 
-                //multisample
-                for _ in 0..self.samples {
-                    let ray = self.camera.get_ray(
-                        (x + x_offset) as f32 + rng.gen_range(0.0, 1.0),
-                        (y + y_offset) as f32 + rng.gen_range(0.0, 1.0),
-                    );
+        //multisample
+        for _ in 0..self.samples {
+            let ray = self.camera.get_ray(
+                x as f32 + rng.gen_range(0.0, 1.0), //the rng is for random multisampling within the pixel
+                y as f32 + rng.gen_range(0.0, 1.0),
+            );
 
-                    let (color, albedo, normal, depth) = if let Some(idx) = self.debug_index {
-                        bvh.debug_hit(idx, &ray, 0.0001, std::f32::MAX)
-                    } else {
-                        self.trace_color(&ray, bvh)
-                    };
+            let (color, albedo, normal, depth) = self.trace_color(&ray, bvh);
 
-                    final_color += color;
-                    final_albedo += albedo;
-                    final_normal += normal; //[-1,1]
-                    final_depth += depth;
-                }
-
-                //normalize color after sampling a lot
-                final_color /= self.samples as f32;
-                final_albedo /= self.samples as f32;
-                final_normal /= self.samples as f32;
-                final_depth /= self.samples as f32;
-
-                if self.incremental {
-                    let k = 1.0 / frame as f32;
-                    let km1 = (frame-1) as f32 / frame as f32;
-
-                    final_color = (self.get_pixel(color_buf, x, y) * km1) + (final_color * k);
-                    final_albedo = (self.get_pixel(albedo_buf, x, y) * km1) + (final_albedo * k);
-                    final_normal = (self.get_pixel(normal_buf, x, y) * km1) + (final_normal * k);
-                    final_depth = (self.get_pixel(depth_buf, x, y).x * km1) + (final_depth * k);
-                }
-
-                self.set_pixel(color_buf, x, y, final_color);
-                self.set_pixel(albedo_buf, x, y, final_albedo);
-                self.set_pixel(normal_buf, x, y, final_normal);
-                self.set_pixel(
-                    depth_buf,
-                    x,
-                    y,
-                    Vec3::new(final_depth, final_depth, final_depth),
-                );
-            }
+            final_color += color;
+            final_albedo += albedo;
+            final_normal += normal; //[-1,1]
+            final_depth += depth;
         }
+
+        //normalize color after sampling a lot
+        final_color /= self.samples as f32;
+        final_albedo /= self.samples as f32;
+        final_normal /= self.samples as f32;
+        final_depth /= self.samples as f32;
+
+        if self.incremental {
+            let k = 1.0 / frame as f32;
+            let km1 = (frame - 1) as f32 / frame as f32;
+
+            final_color = (Vec3::new(color_buf[0], color_buf[1], color_buf[2]) * km1) + (final_color * k);
+            final_albedo = (Vec3::new(albedo_buf[0], albedo_buf[1], albedo_buf[2]) * km1) + (final_albedo * k);
+            final_normal = (Vec3::new(normal_buf[0], normal_buf[1], normal_buf[2]) * km1) + (final_normal * k);
+            final_depth = (Vec3::new(depth_buf[0], depth_buf[1], depth_buf[2]).x * km1) + (final_depth * k);
+        }
+
+        color_buf[0] = final_color.x;
+        color_buf[1] = final_color.y;
+        color_buf[2] = final_color.z;
+
+        albedo_buf[0] = final_albedo.x;
+        albedo_buf[1] = final_albedo.y;
+        albedo_buf[2] = final_albedo.z;
+
+        normal_buf[0] = final_normal.x;
+        normal_buf[1] = final_normal.y;
+        normal_buf[2] = final_normal.z;
+
+        depth_buf[0] = final_depth;
+        depth_buf[1] = final_depth;
+        depth_buf[2] = final_depth;
     }
 
     /// # Return Value

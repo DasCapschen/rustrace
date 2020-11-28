@@ -2,20 +2,20 @@ use crate::camera::Camera;
 use crate::gfx::material::*;
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
 use crate::hittables::mesh::Mesh;
-use crate::math::vec3::Vec3;
-use crate::pathtracer::PathTracer;
+use crate::hittables::primitives::*;
 use crate::hittables::volume::ConstantVolume;
 use crate::hittables::volume::Isotropic;
-use crate::hittables::primitives::*;
-use scoped_threadpool::Pool;
+use crate::math::quat::Quaternion;
+use crate::math::transform::Transform;
+use crate::math::vec3::Vec3;
+use crate::pathtracer::PathTracer;
+use rayon::prelude::*;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::video::Window;
 use sdl2::{EventPump, Sdl};
 use std::sync::Arc;
 use std::time::Instant;
-use crate::math::quat::Quaternion;
-use crate::math::transform::Transform;
 
 enum DisplayMode {
     Denoised,
@@ -60,18 +60,23 @@ impl Renderer {
             .build()
             .unwrap();
 
+        let f = 10.1f32;
+        let fstop = 8.0;
+        let n = 2.0_f32.sqrt().powf(fstop);
+        println!("aperture = f/{}", n);
+
         //setup the camera here
-        let pos = Vec3::new(1.0, 0.0, 0.0);
-        let target = Vec3::new(0.0, 0.0, 0.0);
+        let pos = Vec3::new(-7.0, 17.0, -7.0);
+        let target = Vec3::new(7.5, 5.0, 7.5);
         let camera = Camera::new(
             /*pos: */ pos,
             /*dir: */ target - pos,
             /*fov: */ 90.0,
             /*w: */ width,
             /*h: */ height,
-            /*focus: */ 1.0, //if aperture == 0 focus dist is irrelevant
+            /*focus: */ f, //if aperture == 0 focus dist is irrelevant
             /*aperture: */
-            0.0, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+            f/n, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
         );
 
         // https://hdrihaven.com/
@@ -108,27 +113,27 @@ impl Renderer {
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.forward(),
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.direction,
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.forward(),
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.direction,
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right(),
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right,
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right(),
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right,
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up(),
+                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up,
                 Event::KeyDown {
                     keycode: Some(Keycode::C),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up(),
+                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up,
                 Event::KeyDown {
                     keycode: Some(Keycode::F1),
                     ..
@@ -181,27 +186,35 @@ impl Renderer {
     /// creates the scene that will be rendered
     pub fn build_scene(mut self) -> Self {
         //create a 10x10x10 cube of spheres with colorful colors
-        /*
-        for x in -10..10i8 {
-            for y in -10..10i8 {
-                for z in -10..10i8 {
+        
+        self.path_tracer.add_object(Arc::new(
+            Sphere {
+                center: Vec3::new(0.0, -1000.0, 0.0),
+                radius: 1000.0,
+                material: Arc::new( Lambertian::new(Arc::new(ConstantTexture::new(Vec3::rgb(5, 50, 10))), None) )
+            }
+        ));
+
+        for x in 0..10i8 {
+            for y in 0..10i8 {
+                for z in 0..10i8 {
                     let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
                     let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
                     let b = (z as f32 * (220.0 / 10.0) + 10.0) as u8;
 
                     let color = Arc::new(ConstantTexture::new(Vec3::rgb(r, g, b)));
-                    let metallic = Metallic::NonMetal;
-                    let refraction = None;
+                    //let metallic = Metallic::NonMetal;
+                    //let refraction = None;
 
-                    renderer.add_object(Arc::new(Sphere {
+                    self.path_tracer.add_object(Arc::new(Sphere {
                         center: 1.5 * Vec3::new(x as f32, y as f32, z as f32),
                         radius: 0.5,
-                        material: Arc::new(Material::new(color, None, metallic, refraction)),
+                        material: Arc::new(Lambertian::new(color, None)),
                     }));
                 }
             }
         }
-        */
+        
 
         /*
         let checker_dark = Arc::new(ConstantTexture::new(Vec3::new(0.33, 0.33, 0.33)));
@@ -225,6 +238,7 @@ impl Renderer {
             roughness: Arc::new(ConstantTexture::new(Vec3::rgb(10,10,10))),
         };*/
 
+        /*
         let texture = Arc::new(ConstantTexture::new(Vec3::new(1.0, 1.0, 1.0)));
         let material = Arc::new(Lambertian::new(texture, None));
 
@@ -233,9 +247,10 @@ impl Renderer {
         let rotation = Quaternion::from_euler(-90.0, -0.0, 45.0);
         let scale = 1.0;
 
-        let transformed_dragon = Arc::new( Transform::new(dragon, position, rotation, scale) );
+        let transformed_dragon = Arc::new(Transform::new(dragon, position, rotation, scale));
 
         self.path_tracer.add_object(transformed_dragon);
+        */
 
         //let dragon = Arc::new(Mesh::new("res/models/dragon_tiny.obj"));
         /*let boundary = Arc::new(Sphere {
@@ -253,8 +268,12 @@ impl Renderer {
         // DO NOT CHANGE STUFF AFTER THIS COMMENT
 
         //creates bvh and leaves the scene immutable (ownership moved to bvh)
+        #[cfg(measure_perf)]
         let finalise_time = Instant::now();
+
         self.path_tracer = self.path_tracer.finalise();
+
+        #[cfg(measure_perf)]
         println!("Finalising took {:?}", finalise_time.elapsed());
         self
     }
@@ -289,8 +308,6 @@ impl Renderer {
             .set_srgb(false)
             .set_img_dims(self.width as usize, self.height as usize);
 
-        //create thread pool (cannot save this either, annoying...)
-        let mut thread_pool = Pool::new(8);
 
         let mut frame = 1;
 
@@ -298,59 +315,49 @@ impl Renderer {
         while self.running {
             self.handle_sdl_events(&mut event_pump);
 
-            let subdiv = thread_pool.thread_count() as usize;
-            let len = self.color_buffer.len() / subdiv;
-
+            //#[cfg(measure_perf)]
             let render_time = Instant::now();
 
-            //this is a new thread
-            thread_pool.scoped(|s| {
-                //here, create references to outside things, like a thread setup
-                let r = &self.path_tracer;
+            let len = self.color_buffer.len();
+            let cb = &mut self.color_buffer;
+            let ab = &mut self.albedo_buffer;
+            let nb = &mut self.normal_buffer;
+            let db = &mut self.depth_buffer;
+            let tracer = &self.path_tracer;
 
-                //Mutable Slices of our vectors do NOT split the vector itself below!
-                let mut curr_color_buf = &mut self.color_buffer[..];
-                let mut curr_albedo_buf = &mut self.albedo_buffer[..];
-                let mut curr_normal_buf = &mut self.normal_buffer[..];
-                let mut curr_depth_buf = &mut self.depth_buffer[..];
-
-                for i in 0..subdiv {
-                    //split the buffers into parts for each thread!
-                    let (color_slice, color_buf) = curr_color_buf.split_at_mut(len);
-                    curr_color_buf = color_buf;
-                    let (albedo_slice, albedo_buf) = curr_albedo_buf.split_at_mut(len);
-                    curr_albedo_buf = albedo_buf;
-                    let (normal_slice, normal_buf) = curr_normal_buf.split_at_mut(len);
-                    curr_normal_buf = normal_buf;
-                    let (depth_slice, depth_buf) = curr_depth_buf.split_at_mut(len);
-                    curr_depth_buf = depth_buf;
-
-                    //this is the actual function of the thread
-                    s.execute(move || {
-                        r.draw_image(
-                            color_slice,
-                            albedo_slice,
-                            normal_slice,
-                            depth_slice,
-                            i * len,
-                            frame
-                        );
-                    });
-                }
+            cb.par_chunks_mut(3).enumerate()
+            .zip( ab.par_chunks_mut(3))
+            .zip( nb.par_chunks_mut(3))
+            .zip( db.par_chunks_mut(3))
+            .for_each_init(
+                || rand::thread_rng(),
+                |rng, ((((index, c), a), n), d)| {
+                    tracer.render_pixel(rng, index, frame, 
+                    c, 
+                    a, 
+                    n, 
+                    d)
             });
+
+            //#[cfg(measure_perf)]
             println!("Render took {:?}", render_time.elapsed());
 
-            //denoise image
+            
+            #[cfg(measure_perf)]
             let denoise_time = Instant::now();
+
+            //denoise image
             let mut denoise_buffer = vec![0f32; self.color_buffer.len()];
             denoise_filter
-                .execute(
+                .execute_with_albedo_normal(
                     &self.color_buffer[..],
-                    Some(&self.albedo_buffer[..]),
-                    Some(&self.normal_buffer[..]),
+                    &self.albedo_buffer[..],
+                    &self.normal_buffer[..],
                     &mut denoise_buffer[..],
                 )
                 .expect("failed to denoise image");
+
+            #[cfg(measure_perf)]
             println!("Denoising took {:?}", denoise_time.elapsed());
 
             let pp_buffer = match &self.display_mode {
@@ -361,8 +368,12 @@ impl Renderer {
                 DisplayMode::Depth => &self.depth_buffer,
             };
 
+            #[cfg(measure_perf)]
             let convert_time = Instant::now();
+
             let display_buffer = Self::post_process(pp_buffer);
+
+            #[cfg(measure_perf)]
             println!("Post processing took {:?}", convert_time.elapsed());
 
             //write pixels
@@ -371,8 +382,11 @@ impl Renderer {
                 pixel_buffer.copy_from_slice(&display_buffer[..]);
             }
 
-            println!("Total draw time was: {:?}", render_time.elapsed());
-            println!("=========================");
+            #[cfg(measure_perf)]
+            {
+                println!("Total draw time was: {:?}", render_time.elapsed());
+                println!("=========================");
+            }            
 
             //"swap" images
             surface.update_window().expect("failed to update windows!");

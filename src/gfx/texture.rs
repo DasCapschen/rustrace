@@ -5,7 +5,12 @@ use crate::math::vec3::Vec3;
 use std::sync::Arc;
 
 /*
-TODO: implement filtering
+TODO: don't know where to put this, but...
+fn luminance() -> f32 {
+    //either vec3 as input, or texture & uvcoords as input
+
+    0.2126 * R + 0.7152 * G + 0.0722 * B
+}
 */
 
 pub trait Texture: Send + Sync {

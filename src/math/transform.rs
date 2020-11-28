@@ -1,10 +1,9 @@
-
-use crate::hittables::aabb::AABB;
+use crate::hit::Hit;
 use crate::hit::HitResult;
-use crate::ray::Ray;
+use crate::hittables::aabb::AABB;
 use crate::math::quat::Quaternion;
 use crate::math::vec3::Vec3;
-use crate::hit::Hit;
+use crate::ray::Ray;
 use std::sync::Arc;
 
 // first scale
@@ -28,7 +27,7 @@ impl Hit for Transform {
                 //undo the transformation to fix viewpoint
                 let transformed_hit = self.apply_transform(&transformed_ray, &hit);
                 Some(transformed_hit)
-            },
+            }
             _ => None,
         }
     }
@@ -58,24 +57,45 @@ impl Hit for Transform {
         let points = [p0, p1, p2, p3, p4, p5, p6, p7];
 
         //find max values of all points
-        let max_x = points.iter().max_by(|u,v| u.x.partial_cmp(&v.x).unwrap()).unwrap().x;
-        let max_y = points.iter().max_by(|u,v| u.y.partial_cmp(&v.y).unwrap()).unwrap().y;
-        let max_z = points.iter().max_by(|u,v| u.z.partial_cmp(&v.z).unwrap()).unwrap().z;
+        let max_x = points
+            .iter()
+            .max_by(|u, v| u.x.partial_cmp(&v.x).unwrap())
+            .unwrap()
+            .x;
+        let max_y = points
+            .iter()
+            .max_by(|u, v| u.y.partial_cmp(&v.y).unwrap())
+            .unwrap()
+            .y;
+        let max_z = points
+            .iter()
+            .max_by(|u, v| u.z.partial_cmp(&v.z).unwrap())
+            .unwrap()
+            .z;
 
         //find min values of all points
-        let min_x = points.iter().min_by(|u,v| u.x.partial_cmp(&v.x).unwrap()).unwrap().x;
-        let min_y = points.iter().min_by(|u,v| u.y.partial_cmp(&v.y).unwrap()).unwrap().y;
-        let min_z = points.iter().min_by(|u,v| u.z.partial_cmp(&v.z).unwrap()).unwrap().z;
-       
+        let min_x = points
+            .iter()
+            .min_by(|u, v| u.x.partial_cmp(&v.x).unwrap())
+            .unwrap()
+            .x;
+        let min_y = points
+            .iter()
+            .min_by(|u, v| u.y.partial_cmp(&v.y).unwrap())
+            .unwrap()
+            .y;
+        let min_z = points
+            .iter()
+            .min_by(|u, v| u.z.partial_cmp(&v.z).unwrap())
+            .unwrap()
+            .z;
+
         //get new axis aligned min and max coordinates
         let start = Vec3::new(min_x, min_y, min_z);
         let end = Vec3::new(max_x, max_y, max_z);
 
         //TODO: apply scale
-        Some(AABB::new(
-            start + self.position,
-            end + self.position,
-        ))
+        Some(AABB::new(start + self.position, end + self.position))
     }
     fn center(&self) -> Vec3 {
         //center does not change with scale or rotation
@@ -85,7 +105,12 @@ impl Hit for Transform {
 
 impl Transform {
     pub fn new(object: Arc<dyn Hit>, position: Vec3, rotation: Quaternion, scale: f32) -> Self {
-        Self { object, position, rotation, scale }
+        Self {
+            object,
+            position,
+            rotation,
+            scale,
+        }
     }
 
     //TODO: does not apply scale!
@@ -105,7 +130,7 @@ impl Transform {
     fn apply_inverse_transform(&self, ray: &Ray) -> Ray {
         Ray {
             origin: self.rotation.unrotate_vector(ray.origin - self.position),
-            direction: self.rotation.unrotate_vector(ray.direction)
+            direction: self.rotation.unrotate_vector(ray.direction),
         }
     }
 }

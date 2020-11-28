@@ -8,8 +8,13 @@ pub struct Camera {
     pub position: Vec3,
     /// the direction the camera is looking in (normalised)
     pub direction: Vec3,
+    /// right vector, calculated
+    pub right: Vec3,
+    /// up vector, calculated
+    pub up: Vec3,
     /// the horizontal field of view
     fov: f32,
+    tan_half_fov: f32,
     /// the width of the rendered image
     width: u32,
     /// the height of the rendered image
@@ -38,10 +43,16 @@ impl Camera {
         focus_dist: f32,
         aperture: f32,
     ) -> Self {
+        let fwd = direction.normalised();
+        let right = Camera::calc_right(fwd);
+        let up = Camera::calc_up(fwd, right);
         Camera {
             position,
-            direction: direction.normalised(),
+            direction: fwd,
+            right: right,
+            up: up,
             fov,
+            tan_half_fov: (fov / 2.0).to_radians().tan(),
             width,
             height,
             focus_dist,
@@ -49,25 +60,20 @@ impl Camera {
         }
     }
 
-    /// returns the forward vector (direction the camera is looking)
-    pub fn forward(&self) -> Vec3 {
-        self.direction
-    }
-
     /// returns the vector pointing to the right of the cameras look-direction
-    pub fn right(&self) -> Vec3 {
+    fn calc_right(fwd: Vec3) -> Vec3 {
         const GLOBAL_UP: Vec3 = Vec3 {
             x: 0.0,
             y: 1.0,
             z: 0.0,
         };
 
-        GLOBAL_UP.cross(self.forward())
+        GLOBAL_UP.cross(fwd)
     }
 
     /// returns the vector pointing upwards of the cameras look-direction
-    pub fn up(&self) -> Vec3 {
-        self.forward().cross(self.right())
+    fn calc_up(fwd: Vec3, right: Vec3) -> Vec3 {
+        fwd.cross(right)
     }
 
     /// gets a new ray from the camera at the screen coordinates x and y
@@ -92,7 +98,7 @@ impl Camera {
         // 2 * tan 45 = width
 
         //width of our screen at focal distance
-        let focal_width = 2.0 * (self.fov / 2.0).to_radians().tan() * self.focus_dist;
+        let focal_width = 2.0 * self.tan_half_fov * self.focus_dist;
 
         //figure out by how much we have to scale real_width and real_height to arrive at focal_width / focal_height
         let scale = focal_width / self.width as f32;
@@ -104,9 +110,9 @@ impl Camera {
 
         //calculate local coordinate system
         //let forward = (self.target - self.position).normalised();
-        let forward = self.forward();
-        let right = self.right() * scale;
-        let up = self.up() * -scale; //negative because (0,0) is TOP right
+        let forward = self.direction;
+        let right = self.right * scale;
+        let up = self.up * -scale; //negative because (0,0) is TOP right
 
         let center = self.position + forward * self.focus_dist; //focus_dist -> move focus plane (Z, depth)
 

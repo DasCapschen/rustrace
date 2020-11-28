@@ -46,11 +46,16 @@ impl Vec3 {
     }
 
     /// dot product between self and rhs
+    /// # Properties
+    /// * if computed with 2 normalised vectors, yields the cosine of the angle between them
     pub fn dot(&self, rhs: Vec3) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
     /// cross product between self and rhs
+    /// # Properties
+    /// * produces a vector perpendicular to both input vectors
+    /// * if computed with 2 normalised vectors, the length of the resulting vector is equal to the sine of the angle between the 2 original vectors
     pub fn cross(&self, rhs: Vec3) -> Vec3 {
         Vec3 {
             x: self.y * rhs.z - self.z * rhs.y, //xyzzy

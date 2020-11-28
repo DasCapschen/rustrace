@@ -110,7 +110,7 @@ impl Material for Lambertian {
 
         // lambertian scattering pdf is cos(theta)/pi
 
-        let cosine = normal.dot(scattered_ray.direction.normalised());
+        let cosine = normal.dot(scattered_ray.direction);
         if cosine < 0.0 {
             0.0
         } else {

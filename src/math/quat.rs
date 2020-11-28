@@ -1,7 +1,7 @@
-use std::ops::Neg;
+use crate::math::vec3::Vec3;
 use std::ops::Div;
 use std::ops::Mul;
-use crate::math::vec3::Vec3;
+use std::ops::Neg;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Quaternion {
@@ -19,16 +19,16 @@ impl Quaternion {
     //we first yaw (Y), then pitch (X), then roll (Z)
     pub fn from_euler(yaw: f32, pitch: f32, roll: f32) -> Self {
         //cos and sin expect radians
-        let yaw = (yaw/2.0).to_radians();
-        let pitch = (pitch/2.0).to_radians();
-        let roll = (roll/2.0).to_radians();
+        let yaw = (yaw / 2.0).to_radians();
+        let pitch = (pitch / 2.0).to_radians();
+        let roll = (roll / 2.0).to_radians();
 
-        let cos_yaw   = yaw.cos();
+        let cos_yaw = yaw.cos();
         let cos_pitch = pitch.cos();
-        let cos_roll  = roll.cos();
-        let sin_yaw   = yaw.sin();
+        let cos_roll = roll.cos();
+        let sin_yaw = yaw.sin();
         let sin_pitch = pitch.sin();
-        let sin_roll  = roll.sin();
+        let sin_roll = roll.sin();
 
         Self {
             x: sin_yaw * cos_pitch * sin_roll + cos_yaw * sin_pitch * cos_roll,
@@ -36,6 +36,7 @@ impl Quaternion {
             z: cos_yaw * cos_pitch * sin_roll - sin_yaw * sin_pitch * cos_roll,
             w: cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll,
         }
+        .normalised() //make sure len == 1
     }
 
     pub fn len(&self) -> f32 {
@@ -61,7 +62,7 @@ impl Quaternion {
             x: -self.x,
             y: -self.y,
             z: -self.z,
-            w: self.w
+            w: self.w,
         }
     }
 
@@ -73,11 +74,11 @@ impl Quaternion {
     //i think inverse, and qpq* is special case if |q| == 1
     //because q^-1 == q* if |q| == 1
     pub fn rotate_vector(&self, v: Vec3) -> Vec3 {
-        let q = (*self) * v * self.inverse();
+        let q = (*self) * v * self.conjugate();
         Vec3::new(q.x, q.y, q.z) //ignore w
     }
     pub fn unrotate_vector(&self, v: Vec3) -> Vec3 {
-        let q = self.inverse() * v * (*self);
+        let q = self.conjugate() * v * (*self);
         Vec3::new(q.x, q.y, q.z)
     }
 }
@@ -87,39 +88,40 @@ impl Mul<Quaternion> for Quaternion {
     fn mul(self, rhs: Quaternion) -> Self::Output {
         Quaternion {
             x: self.x * rhs.w + self.w * rhs.x + self.y * rhs.z - self.z * rhs.y,
-            y: self.y * rhs.w + self.w * rhs.y + self.z * rhs.x - self.x * rhs.z, 
+            y: self.y * rhs.w + self.w * rhs.y + self.z * rhs.x - self.x * rhs.z,
             z: self.z * rhs.w + self.w * rhs.z + self.x * rhs.y - self.y * rhs.x,
             w: self.w * rhs.w - self.x * rhs.x - self.y * rhs.y - self.z * rhs.z,
         }
     }
 }
 
+//vec3 = quaternion with w == 0
 impl Mul<Vec3> for Quaternion {
     type Output = Quaternion;
-    fn mul(self, rhs: Vec3) -> Self::Output { 
+    fn mul(self, rhs: Vec3) -> Self::Output {
         Quaternion {
-            x:   self.w * rhs.x + self.y * rhs.z - self.z * rhs.y, 
-            y:   self.w * rhs.y + self.z * rhs.x - self.x * rhs.z, 
-            z:   self.w * rhs.z + self.x * rhs.y - self.y * rhs.x,
-            w: - self.x * rhs.x - self.y * rhs.y - self.z * rhs.z,
+            x: self.w * rhs.x + self.y * rhs.z - self.z * rhs.y,
+            y: self.w * rhs.y + self.z * rhs.x - self.x * rhs.z,
+            z: self.w * rhs.z + self.x * rhs.y - self.y * rhs.x,
+            w: -self.x * rhs.x - self.y * rhs.y - self.z * rhs.z,
         }
     }
 }
 impl Mul<Quaternion> for Vec3 {
     type Output = Quaternion;
-    fn mul(self, rhs: Quaternion) -> Quaternion { 
+    fn mul(self, rhs: Quaternion) -> Quaternion {
         Quaternion {
-            x:   rhs.w * self.x + rhs.y * self.z - rhs.z * self.y, 
-            y:   rhs.w * self.y + rhs.z * self.x - rhs.x * self.z, 
-            z:   rhs.w * self.z + rhs.x * self.y - rhs.y * self.x,
-            w: - rhs.x * self.x - rhs.y * self.y - rhs.z * self.z,
+            x: rhs.w * self.x + rhs.y * self.z - rhs.z * self.y,
+            y: rhs.w * self.y + rhs.z * self.x - rhs.x * self.z,
+            z: rhs.w * self.z + rhs.x * self.y - rhs.y * self.x,
+            w: -rhs.x * self.x - rhs.y * self.y - rhs.z * self.z,
         }
     }
 }
 
 impl Mul<f32> for Quaternion {
     type Output = Quaternion;
-    fn mul(self, rhs: f32) -> Quaternion { 
+    fn mul(self, rhs: f32) -> Quaternion {
         Quaternion {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -131,7 +133,7 @@ impl Mul<f32> for Quaternion {
 
 impl Mul<Quaternion> for f32 {
     type Output = Quaternion;
-    fn mul(self, rhs: Quaternion) -> Quaternion { 
+    fn mul(self, rhs: Quaternion) -> Quaternion {
         Quaternion {
             x: rhs.x * self,
             y: rhs.y * self,
@@ -143,7 +145,7 @@ impl Mul<Quaternion> for f32 {
 
 impl Div<f32> for Quaternion {
     type Output = Quaternion;
-    fn div(self, rhs: f32) -> Quaternion { 
+    fn div(self, rhs: f32) -> Quaternion {
         Quaternion {
             x: self.x / rhs,
             y: self.y / rhs,
