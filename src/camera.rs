@@ -136,7 +136,7 @@ impl Camera {
     }
 
     fn update_fov(&mut self) {
-        self.tan_half_fov = (18.0f32 / (self.focal_length * self.crop_factor.0));
+        self.tan_half_fov = 18.0f32 / (self.focal_length * self.crop_factor.0);
     }
     fn update_aperture(&mut self) {
         self.aperture = calculate_aperture(self.fstop, self.focal_length);

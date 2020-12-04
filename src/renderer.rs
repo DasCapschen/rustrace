@@ -12,7 +12,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::video::Window;
 use sdl2::{EventPump, Sdl};
 use std::sync::Arc;
-use std::time::Instant;
+
 
 enum DisplayMode {
     Denoised,
