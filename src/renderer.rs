@@ -76,7 +76,7 @@ impl Renderer {
             /*focus: */ Focus::Distance(f), //if aperture == 0 focus dist is irrelevant
             35.0,
             fstop,
-            CropFactor::FULL_FORMAT //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+            CropFactor::FULL_FORMAT, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
         );
 
         // https://hdrihaven.com/
@@ -98,7 +98,7 @@ impl Renderer {
             albedo_buffer: vec![0f32; buffer_size],
             normal_buffer: vec![0f32; buffer_size],
             depth_buffer: vec![0f32; buffer_size],
-            frame: 1
+            frame: 1,
         }
     }
 
@@ -114,27 +114,45 @@ impl Renderer {
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
                     ..
-                } => { self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.direction; self.frame = 1; },
+                } => {
+                    self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.direction;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
-                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.direction; self.frame = 1;},
+                } => {
+                    self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.direction;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
-                } => {self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right; self.frame = 1;},
+                } => {
+                    self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
-                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right; self.frame = 1;},
+                } => {
+                    self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
                     ..
-                } => {self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up; self.frame = 1;},
+                } => {
+                    self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::C),
                     ..
-                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up; self.frame = 1;},
+                } => {
+                    self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up;
+                    self.frame = 1;
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::F1),
                     ..
@@ -156,43 +174,58 @@ impl Renderer {
                     ..
                 } => self.display_mode = DisplayMode::Depth,
                 Event::KeyDown {
-                    keycode: Some(Keycode::KpPlus), ..
+                    keycode: Some(Keycode::KpPlus),
+                    ..
                 } => {
-                    self.path_tracer.camera.set_focal_length( self.path_tracer.camera.focal_length + 1.0 );
+                    self.path_tracer
+                        .camera
+                        .set_focal_length(self.path_tracer.camera.focal_length + 1.0);
                     self.frame = 1;
-                },
+                }
                 Event::KeyDown {
-                    keycode: Some(Keycode::KpMinus), ..
+                    keycode: Some(Keycode::KpMinus),
+                    ..
                 } => {
-                    self.path_tracer.camera.set_focal_length( self.path_tracer.camera.focal_length - 1.0 );
+                    self.path_tracer
+                        .camera
+                        .set_focal_length(self.path_tracer.camera.focal_length - 1.0);
                     self.frame = 1;
-                },
+                }
                 Event::KeyDown {
-                    keycode: Some(Keycode::KpMultiply), ..
+                    keycode: Some(Keycode::KpMultiply),
+                    ..
                 } => {
-                    self.path_tracer.camera.set_fstop(self.path_tracer.camera.fstop + 1);
+                    self.path_tracer
+                        .camera
+                        .set_fstop(self.path_tracer.camera.fstop + 1);
                     self.frame = 1;
-                },
+                }
                 Event::KeyDown {
-                    keycode: Some(Keycode::KpDivide), ..
+                    keycode: Some(Keycode::KpDivide),
+                    ..
                 } => {
-                    self.path_tracer.camera.set_fstop(self.path_tracer.camera.fstop - 1);
+                    self.path_tracer
+                        .camera
+                        .set_fstop(self.path_tracer.camera.fstop - 1);
                     self.frame = 1;
-                },
+                }
                 Event::KeyDown {
-                    keycode: Some(Keycode::KpEnter), ..
+                    keycode: Some(Keycode::KpEnter),
+                    ..
                 } => {
                     if self.path_tracer.camera.crop_factor == CropFactor::FULL_FORMAT {
                         self.path_tracer.camera.set_crop_factor(CropFactor::APSC);
-                    }
-                    else if self.path_tracer.camera.crop_factor == CropFactor::APSC {
-                        self.path_tracer.camera.set_crop_factor(CropFactor::APSC_CANON);
-                    }
-                    else if self.path_tracer.camera.crop_factor == CropFactor::APSC_CANON {
-                        self.path_tracer.camera.set_crop_factor(CropFactor::FULL_FORMAT);
+                    } else if self.path_tracer.camera.crop_factor == CropFactor::APSC {
+                        self.path_tracer
+                            .camera
+                            .set_crop_factor(CropFactor::APSC_CANON);
+                    } else if self.path_tracer.camera.crop_factor == CropFactor::APSC_CANON {
+                        self.path_tracer
+                            .camera
+                            .set_crop_factor(CropFactor::FULL_FORMAT);
                     }
                     self.frame = 1;
-                },
+                }
                 _ => {}
             }
         }

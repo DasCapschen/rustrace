@@ -7,13 +7,15 @@ impl CropFactor {
     pub const FULL_FORMAT: Self = Self(1.0_f32);
     pub const APSC: Self = Self(1.525_f32);
     pub const APSC_CANON: Self = Self(1.595_f32);
-    pub fn custom(cf: f32) -> Self { Self(cf) }
+    pub fn custom(cf: f32) -> Self {
+        Self(cf)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Focus {
     AutoFocus,
-    Distance(f32)
+    Distance(f32),
 }
 
 /// implements a camera from which to render from
@@ -56,13 +58,7 @@ impl Camera {
     /// * `height` - the height of the rendered image
     /// * `focus_dist` - the distance at which the camera focuses (only if aperture > 0)
     /// * `aperture` - the aperture of the camera, bigger number leads to more "depth of field" (blurryness)
-    pub fn new_virtual(
-        position: Vec3,
-        direction: Vec3,
-        fov: f32,
-        width: u32,
-        height: u32
-    ) -> Self {
+    pub fn new_virtual(position: Vec3, direction: Vec3, fov: f32, width: u32, height: u32) -> Self {
         let fwd = direction.normalised();
         let right = Camera::calc_right(fwd);
         let up = Camera::calc_up(fwd, right);
@@ -90,7 +86,7 @@ impl Camera {
         focus: Focus,
         focal_length: f32,
         fstop: i32,
-        crop_factor: CropFactor
+        crop_factor: CropFactor,
     ) -> Self {
         let fwd = direction.normalised();
         let right = Camera::calc_right(fwd);
@@ -110,7 +106,7 @@ impl Camera {
             aperture: calculate_aperture(fstop, focal_length),
             fstop,
             focal_length,
-            crop_factor
+            crop_factor,
         }
     }
 
@@ -186,7 +182,7 @@ impl Camera {
         let focus_dist = match self.focus {
             Focus::AutoFocus => {
                 2.0 //TODO!
-            },
+            }
             Focus::Distance(d) => d,
         };
 
