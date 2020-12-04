@@ -63,7 +63,7 @@ impl PathTracer {
         self
     }
 
-    fn set_pixel(&self, buf: &mut [f32], x: u32, y: u32, color: Vec3) {
+    /*fn set_pixel(&self, buf: &mut [f32], x: u32, y: u32, color: Vec3) {
         let x_stride = 3; //because 3 color values
         let y_stride = self.width * x_stride; //because every width pixel has 3 color values
 
@@ -76,16 +76,16 @@ impl PathTracer {
         buf[(R + position) as usize] = color.x.min(1.0).max(0.0) as f32;
         buf[(G + position) as usize] = color.y.min(1.0).max(0.0) as f32;
         buf[(B + position) as usize] = color.z.min(1.0).max(0.0) as f32;
-    }
+    }*/
 
-    fn get_pixel(&self, buf: &[f32], x: u32, y: u32) -> Vec3 {
+    /*fn get_pixel(&self, buf: &[f32], x: u32, y: u32) -> Vec3 {
         let x_stride = 3;
         let y_stride = self.width * x_stride;
 
         let position = ((x * x_stride) + (y * y_stride)) as usize;
 
         Vec3::new(buf[0 + position], buf[1 + position], buf[2 + position])
-    }
+    }*/
 
     pub fn render_pixel(
         &self,
@@ -130,7 +130,7 @@ impl PathTracer {
         final_normal /= self.samples as f32;
         final_depth /= self.samples as f32;
 
-        if self.incremental {
+        if self.incremental && frame > 1 {
             let k = 1.0 / frame as f32;
             let km1 = (frame - 1) as f32 / frame as f32;
 

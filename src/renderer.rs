@@ -1,4 +1,4 @@
-use crate::camera::Camera;
+use crate::camera::{Camera, CropFactor, Focus};
 use crate::gfx::material::*;
 use crate::gfx::texture::{ConstantTexture, ImageTexture};
 
@@ -39,6 +39,8 @@ pub struct Renderer {
     albedo_buffer: Vec<f32>,
     normal_buffer: Vec<f32>,
     depth_buffer: Vec<f32>,
+
+    frame: u32,
 }
 
 impl Renderer {
@@ -57,23 +59,24 @@ impl Renderer {
             .build()
             .unwrap();
 
-        let f = 10.1f32;
-        let fstop = 8.0;
-        let n = 2.0_f32.sqrt().powf(fstop);
+        //setup the camera here
+        let pos = Vec3::new(-7.0, 12.0, -7.0);
+        let target = Vec3::new(0.0, 5.0, 0.0);
+
+        let f = (Vec3::new(0.707, 9.0, 0.707) - pos).len();
+        let fstop = 8;
+        let n = 2.0_f32.sqrt().powi(fstop);
         println!("aperture = f/{}", n);
 
-        //setup the camera here
-        let pos = Vec3::new(-7.0, 17.0, -7.0);
-        let target = Vec3::new(7.5, 5.0, 7.5);
-        let camera = Camera::new(
+        let camera = Camera::new_physical(
             /*pos: */ pos,
             /*dir: */ target - pos,
-            /*fov: */ 90.0,
             /*w: */ width,
             /*h: */ height,
-            /*focus: */ f, //if aperture == 0 focus dist is irrelevant
-            /*aperture: */
-            f / n, //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
+            /*focus: */ Focus::Distance(f), //if aperture == 0 focus dist is irrelevant
+            35.0,
+            fstop,
+            CropFactor::FULL_FORMAT //perfect camera => 0 => no DoF ; bigger aperture => stronger DoF
         );
 
         // https://hdrihaven.com/
@@ -95,6 +98,7 @@ impl Renderer {
             albedo_buffer: vec![0f32; buffer_size],
             normal_buffer: vec![0f32; buffer_size],
             depth_buffer: vec![0f32; buffer_size],
+            frame: 1
         }
     }
 
@@ -110,27 +114,27 @@ impl Renderer {
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.direction,
+                } => { self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.direction; self.frame = 1; },
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.direction,
+                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.direction; self.frame = 1;},
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right,
+                } => {self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.right; self.frame = 1;},
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right,
+                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.right; self.frame = 1;},
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
                     ..
-                } => self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up,
+                } => {self.path_tracer.camera.position += 0.1 * self.path_tracer.camera.up; self.frame = 1;},
                 Event::KeyDown {
                     keycode: Some(Keycode::C),
                     ..
-                } => self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up,
+                } => {self.path_tracer.camera.position += -0.1 * self.path_tracer.camera.up; self.frame = 1;},
                 Event::KeyDown {
                     keycode: Some(Keycode::F1),
                     ..
@@ -152,29 +156,43 @@ impl Renderer {
                     ..
                 } => self.display_mode = DisplayMode::Depth,
                 Event::KeyDown {
-                    keycode: Some(Keycode::Up),
-                    ..
-                } => self.path_tracer.debug_index = Some(0),
-                Event::KeyDown {
-                    keycode: Some(Keycode::Down),
-                    ..
-                } => self.path_tracer.debug_index = None,
-                Event::KeyDown {
-                    keycode: Some(Keycode::Left),
-                    ..
+                    keycode: Some(Keycode::KpPlus), ..
                 } => {
-                    let bvh = self.path_tracer.bvh.as_ref().unwrap();
-                    let idx = self.path_tracer.debug_index.unwrap();
-                    self.path_tracer.debug_index = Some(bvh.get_left_node_index(idx));
-                }
+                    self.path_tracer.camera.set_focal_length( self.path_tracer.camera.focal_length + 1.0 );
+                    self.frame = 1;
+                },
                 Event::KeyDown {
-                    keycode: Some(Keycode::Right),
-                    ..
+                    keycode: Some(Keycode::KpMinus), ..
                 } => {
-                    let bvh = self.path_tracer.bvh.as_ref().unwrap();
-                    let idx = self.path_tracer.debug_index.unwrap();
-                    self.path_tracer.debug_index = Some(bvh.get_right_node_index(idx));
-                }
+                    self.path_tracer.camera.set_focal_length( self.path_tracer.camera.focal_length - 1.0 );
+                    self.frame = 1;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::KpMultiply), ..
+                } => {
+                    self.path_tracer.camera.set_fstop(self.path_tracer.camera.fstop + 1);
+                    self.frame = 1;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::KpDivide), ..
+                } => {
+                    self.path_tracer.camera.set_fstop(self.path_tracer.camera.fstop - 1);
+                    self.frame = 1;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::KpEnter), ..
+                } => {
+                    if self.path_tracer.camera.crop_factor == CropFactor::FULL_FORMAT {
+                        self.path_tracer.camera.set_crop_factor(CropFactor::APSC);
+                    }
+                    else if self.path_tracer.camera.crop_factor == CropFactor::APSC {
+                        self.path_tracer.camera.set_crop_factor(CropFactor::APSC_CANON);
+                    }
+                    else if self.path_tracer.camera.crop_factor == CropFactor::APSC_CANON {
+                        self.path_tracer.camera.set_crop_factor(CropFactor::FULL_FORMAT);
+                    }
+                    self.frame = 1;
+                },
                 _ => {}
             }
         }
@@ -193,9 +211,9 @@ impl Renderer {
             )),
         }));
 
-        for x in 0..10i8 {
-            for y in 0..10i8 {
-                for z in 0..10i8 {
+        for x in 0..3i8 {
+            for y in 0..3i8 {
+                for z in 0..3i8 {
                     let r = (x as f32 * (220.0 / 10.0) + 10.0) as u8;
                     let g = (y as f32 * (220.0 / 10.0) + 10.0) as u8;
                     let b = (z as f32 * (220.0 / 10.0) + 10.0) as u8;
@@ -205,8 +223,8 @@ impl Renderer {
                     //let refraction = None;
 
                     self.path_tracer.add_object(Arc::new(Sphere {
-                        center: 1.5 * Vec3::new(x as f32, y as f32, z as f32),
-                        radius: 0.5,
+                        center: 3.0 * Vec3::new(x as f32, y as f32, z as f32),
+                        radius: 1.0,
                         material: Arc::new(Lambertian::new(color, None)),
                     }));
                 }
@@ -305,13 +323,11 @@ impl Renderer {
             .set_srgb(false)
             .set_img_dims(self.width as usize, self.height as usize);
 
-        let mut frame = 1;
-
         let mut event_pump = self.context.event_pump().unwrap();
         while self.running {
             self.handle_sdl_events(&mut event_pump);
 
-            //#[cfg(measure_perf)]
+            #[cfg(measure_perf)]
             let render_time = Instant::now();
 
             let _len = self.color_buffer.len();
@@ -320,6 +336,8 @@ impl Renderer {
             let nb = &mut self.normal_buffer;
             let db = &mut self.depth_buffer;
             let tracer = &self.path_tracer;
+
+            let frame = self.frame;
 
             cb.par_chunks_mut(3)
                 .enumerate()
@@ -333,7 +351,7 @@ impl Renderer {
                     },
                 );
 
-            //#[cfg(measure_perf)]
+            #[cfg(measure_perf)]
             println!("Render took {:?}", render_time.elapsed());
 
             #[cfg(measure_perf)]
@@ -385,7 +403,7 @@ impl Renderer {
             surface.update_window().expect("failed to update windows!");
 
             //update frame value
-            frame += 1;
+            self.frame += 1;
         }
     }
 }
